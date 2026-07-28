@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Gia Phả Điện Tử</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,500;0,600;0,700;1,500&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============ DESIGN TOKENS ============ */
+  :root{
+    --paper: #efe5cf;
+    --paper-deep: #e2d3a9;
+    --paper-line: #d8c793;
+    --ink: #241d17;
+    --ink-soft: #6e6252;
+    --lacquer: #7c1f2c;
+    --lacquer-deep: #501019;
+    --lacquer-tint: #f7e9ea;
+    --gold: #ab8226;
+    --gold-soft: #dcb455;
+    --gold-tint: #f3e6c2;
+    --indigo: #2c4a5e;
+    --rose: #8f3349;
+    --line: #b79a5e;
+    --shadow: 0 10px 28px rgba(36,29,23,0.16);
+    --font-display: 'Noto Serif', serif;
+    --font-body: 'Be Vietnam Pro', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ -webkit-tap-highlight-color: transparent; }
+  body{
+    font-family: var(--font-body);
+    background: radial-gradient(circle at 15% 0%, rgba(171,130,38,0.08), transparent 45%), var(--paper);
+    color: var(--ink);
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+
+  header{
+    position: relative;
+    background: linear-gradient(180deg, var(--lacquer) 0%, var(--lacquer-deep) 100%);
+    color: var(--gold-tint);
+    text-align: center;
+    padding: 30px 16px 26px;
+    border-bottom: 4px solid var(--gold);
+    box-shadow: var(--shadow);
+  }
+  header h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 5vw, 30px); margin-top: 14px; }
+  header p{ font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-soft); margin-top: 6px; }
+
+  .toolbar-wrap{
+    position: sticky; top: 0; z-index: 60;
+    background: var(--paper-deep);
+    border-bottom: 1px solid var(--paper-line);
+    box-shadow: 0 4px 14px rgba(36,29,23,0.08);
+  }
+  .controls{
+    display:flex; gap:8px; justify-content:center; align-items:center;
+    flex-wrap: wrap; padding: 10px 12px; max-width: 1100px; margin: 0 auto;
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:6px;
+    padding: 9px 14px; border:1px solid transparent;
+    border-radius: 999px; cursor:pointer;
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    white-space: nowrap; background: #fff; color: var(--ink);
+  }
+  .btn:active{ transform: scale(0.96); }
+  .btn .ic{ font-size: 15px; line-height:1; }
+  .btn-add{ background: var(--lacquer); color:#fff; }
+  .btn-export{ background: var(--indigo); color:#fff; }
+  .btn-import{ background: var(--gold); color:#fff; }
+  .btn-clear{ background:#fff; color: var(--lacquer); border-color: var(--lacquer); }
+  .btn-login{ background: var(--ink); color:#fff; }
+  .btn-logout{ background:#7a2020; color:#fff; }
+
+  /* Mặc định ẩn nút thao tác khi chưa đăng nhập */
+  .admin-only { display: none !important; }
+
+  .sync-status{ text-align:center; font-family: var(--font-mono); font-size: 11px; padding: 0 12px 10px; min-height: 14px; color: var(--ink-soft); }
+  .sync-status.syncing{ color: var(--gold); }
+  .sync-status.ok{ color:#2e7d32; }
+  .sync-status.error{ color:#b3261e; }
+
+  .zoom-group{ display:flex; align-items:center; gap:2px; background:#fff; border:1px solid var(--paper-line); border-radius: 999px; padding: 3px; }
+  .zoom-btn{ width:30px; height:30px; border:none; border-radius:50%; background:transparent; font-size:16px; font-weight:700; cursor:pointer; }
+  .zoom-label{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); width: 42px; text-align:center; }
+
+  .legend{ display:flex; gap:16px; justify-content:center; flex-wrap:wrap; padding: 6px 12px 10px; font-size: 12px; color: var(--ink-soft); }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .dot.male{ background: var(--indigo); }
+  .dot.female{ background: var(--rose); }
+  .dot.living{ background: var(--gold); }
+  .dot.deceased{ background: var(--ink-soft); }
+
+  .tree-area{ padding: 34px 10px 60px; overflow: auto; min-height: 55vh; text-align:center; }
+  .zoom-fit{ display:inline-block; transform-origin: top center; transition: transform .18s ease; text-align:center; }
+
+  /* Organization Tree CSS */
+  .tree ul{ padding-top: 26px; position: relative; }
+  .tree > ul{ display:inline-block; padding-top:0; }
+  .tree ul::after{ content:''; display:table; clear:both; }
+  .tree li{ float:left; text-align:center; list-style:none; position:relative; padding: 26px 10px 0 10px; }
+  .tree li::before, .tree li::after{ content:''; position:absolute; top:0; right:50%; border-top: 2px solid var(--line); width:50%; height:26px; }
+  .tree li::after{ right:auto; left:50%; border-left: 2px solid var(--line); }
+  .tree li:only-child::after, .tree li:only-child::before{ display:none; }
+  .tree li:only-child{ padding-top:0; }
+  .tree li:first-child::before, .tree li:last-child::after{ border:0 none; }
+  .tree li:last-child::before{ border-right: 2px solid var(--line); border-radius: 0 6px 0 0; }
+  .tree li:first-child::after{ border-radius: 6px 0 0 0; }
+  .tree ul ul::before{ content:''; position:absolute; top:0; left:50%; border-left: 2px solid var(--line); width:0; height:26px; }
+
+  .node-card{
+    display:inline-block; background:#fffdf8; border: 1px solid var(--paper-line);
+    border-top: none; border-radius: 4px 4px 12px 12px; padding: 20px 18px 14px;
+    min-width: 168px; max-width: 190px; text-align:center; cursor:pointer; position:relative;
+    box-shadow: 0 4px 12px rgba(36,29,23,0.10); transition: transform .16s ease;
+  }
+  .node-card:hover{ transform: translateY(-3px); }
+  .node-card::before{
+    content:''; position:absolute; top:-9px; left:50%; transform: translateX(-50%);
+    border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 9px solid var(--gold);
+  }
+  .node-card.male{ border-top: 3px solid var(--indigo); }
+  .node-card.male::before{ border-bottom-color: var(--indigo); }
+  .node-card.female{ border-top: 3px solid var(--rose); }
+  .node-card.female::before{ border-bottom-color: var(--rose); }
+  .node-eyebrow{ font-family: var(--font-mono); font-size: 10px; color: var(--gold); text-transform: uppercase; }
+  .node-name{ font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+  .node-years, .node-spouse{ font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  .modal-overlay{ display:none; position: fixed; inset:0; background: rgba(36,29,23,0.55); justify-content:center; align-items:center; z-index:100; padding: 16px; }
+  .modal-box{ background:#fffdf8; border-radius: 16px; width:100%; max-width: 440px; padding: 26px 24px; max-height: 88vh; overflow-y:auto; border-top: 5px solid var(--lacquer); }
+  .modal-box h2{ font-family: var(--font-display); color: var(--lacquer); margin-bottom: 18px; font-size: 20px; }
+  .form-group{ margin-bottom: 14px; }
+  .form-group label{ display:block; font-size:12.5px; font-weight:600; color: var(--ink-soft); margin-bottom:5px; text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea{ width:100%; padding: 10px 12px; border:1px solid var(--paper-line); border-radius: 8px; font-size:14px; background: #fbf7ee; }
+  .form-row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  .modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+  .btn-save{ background: var(--lacquer); color:#fff; }
+  .btn-cancel{ background:#efe9db; color: var(--ink); }
+  .btn-delete{ background:#fff; color:#b3261e; border:1px solid #b3261e; }
+
+  .empty-state{ text-align:center; padding: 70px 20px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Gia Phả Điện Tử</h1>
+  <p>Lưu giữ dòng dõi · Kết nối thế hệ</p>
+</header>
+
+<div class="toolbar-wrap">
+  <div class="controls">
+    <button class="btn btn-add admin-only" onclick="openAddModal()"><span class="ic">➕</span><span class="label">Thêm tổ tiên</span></button>
+    <button class="btn btn-export" onclick="exportData()"><span class="ic">💾</span><span class="label">Xuất file</span></button>
+    <label class="btn btn-import admin-only" style="cursor:pointer;">
+      <span class="ic">📁</span><span class="label">Nhập file</span>
+      <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="importData(this)">
+    </label>
+    <button class="btn btn-clear admin-only" onclick="clearAll()"><span class="ic">🗑️</span><span class="label">Xóa hết</span></button>
+    
+    <button class="btn btn-login" id="btnLogin" onclick="openLoginModal()"><span class="ic">🔑</span><span class="label">Đăng nhập Admin</span></button>
+    <button class="btn btn-logout admin-only" id="btnLogout" onclick="logout()"><span class="ic">🚪</span><span class="label">Đăng xuất</span></button>
+
+    <div class="zoom-group">
+      <button class="zoom-btn" onclick="zoomTree(-0.1)">−</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button class="zoom-btn" onclick="zoomTree(0.1)">+</button>
+    </div>
+  </div>
+  <div class="legend">
+    <span><i class="dot male"></i>Nam</span>
+    <span><i class="dot female"></i>Nữ</span>
+    <span><i class="dot living"></i>Còn sống</span>
+    <span><i class="dot deceased"></i>Đã khuất</span>
+  </div>
+  <div id="syncStatus" class="sync-status"></div>
+</div>
+
+<div class="tree-area">
+  <div class="zoom-fit" id="zoomFit">
+    <div id="treeRoot" class="tree"></div>
+  </div>
+</div>
+
+<!-- MODAL LOGIN ADMIN -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box">
+    <h2>Cấu hình Admin (GitHub Sync)</h2>
+    <p style="font-size:12px; color: var(--ink-soft); margin-bottom: 12px;">Nhập Personal Access Token GitHub của bạn để kích hoạt quyền Thêm/Sửa/Xóa và lưu vào file <code>data.json</code>.</p>
+    <div class="form-group">
+      <label>GitHub Personal Access Token *</label>
+      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tên GitHub Owner</label>
+        <input type="text" id="ghOwner" placeholder="VD: nguyen-van-a">
+      </div>
+      <div class="form-group">
+        <label>Tên Repository</label>
+        <input type="text" id="ghRepo" placeholder="VD: Family_Luong">
+      </div>
+    </div>
+    <p id="loginError" style="color: #b3261e; font-size: 12px; margin-bottom: 10px;"></p>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeLoginModal()">Hủy</button>
+      <button class="btn btn-save" onclick="loginAdmin()">Xác nhận Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADD/EDIT MEMBER -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal-box">
+    <h2 id="modalTitle">Thêm thành viên</h2>
+    <div class="form-group">
+      <label>Họ và tên *</label>
+      <input type="text" id="mName" placeholder="VD: Nguyễn Văn A">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Giới tính</label>
+        <select id="mGender">
+          <option value="male">Nam</option>
+          <option value="female">Nữ</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Thế hệ thứ</label>
+        <input type="number" id="mGeneration" placeholder="1" min="1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Năm sinh</label>
+        <input type="text" id="mDob" placeholder="1950">
+      </div>
+      <div class="form-group">
+        <label>Năm mất</label>
+        <input type="text" id="mDod" placeholder="Để trống nếu còn sống">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Vợ / Chồng</label>
+      <input type="text" id="mSpouse">
+    </div>
+    <div class="form-group">
+      <label>Ghi chú</label>
+      <textarea id="mNote" rows="2"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Cha / Mẹ</label>
+      <select id="mParentId"><option value="">-- Tổ tiên --</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-delete admin-only" id="btnDelete" onclick="deleteMember()">Xóa</button>
+      <button class="btn btn-save" onclick="saveMember()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VIEW DETAIL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
+    <h2 id="dName"></h2>
+    <div id="dContent" style="line-height: 1.8; font-size:14px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeDetail()">Đóng</button>
+      <button class="btn btn-add admin-only" onclick="editFromDetail()">Sửa</button>
+      <button class="btn btn-add admin-only" onclick="addChildFromDetail()">Thêm con</button>
+    </div>
+  </div>
+</div>
+
+<script src="services.js"></script>
+<script>
+  let members = [];
+  let nextId = 1;
+  let editingId = null;
+  let detailId = null;
+  let zoomLevel = 1;
+  let fileSha = null; // Cần thiết để GitHub cho phép ghi đè file json
+
+  let ghConfig = JSON.parse(localStorage.getItem('ghAdminConfig')) || null;
+
+  async function init(){
+    checkAuthUI();
+    await loadData();
+    renderTree();
+  }
+
+  function checkAuthUI(){
+    const adminElements = document.querySelectorAll('.admin-only');
+    const loginBtn = document.getElementById('btnLogin');
+    
+    if (ghConfig && ghConfig.token) {
+      adminElements.forEach(el => el.classList.remove('admin-only'));
+      loginBtn.style.display = 'none';
+    } else {
+      adminElements.forEach(el => el.classList.add('admin-only'));
+      loginBtn.style.display = 'inline-flex';
+    }
+  }
+
+  // Tải dữ liệu từ file data.json (Dùng GitHub API hoặc Fetch tĩnh)
+  async function loadData(){
+    setSyncStatus('syncing', 'Đang tải dữ liệu...');
+    try {
+      const res = await fetch('data.json?cache=' + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        members = data.members || [];
+        nextId = data.nextId || 1;
+        setSyncStatus('ok', 'Đã tải dữ liệu mới nhất');
+      }
+    } catch (e) {
+      setSyncStatus('error', 'Không đọc được file data.json');
+    }
+  }
+
+  // Lưu dữ liệu trực tiếp vào repo GitHub thông qua GitHub API
+  async function saveData(){
+    if (!ghConfig || !ghConfig.token) {
+      alert('Bạn phải Đăng nhập Admin để thực hiện lưu!');
+      return;
+    }
+    setSyncStatus('syncing', 'Đang lưu vào GitHub...');
+
+    try {
+      // 1. Lấy SHA mới nhất của file data.json
+      const getUrl = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data.json`;
+      const getRes = await fetch(getUrl, {
+        headers: { 'Authorization': `Bearer ${ghConfig.token}` }
+      });
+
+      if (getRes.ok) {
+        const fileInfo = await getRes.json();
+        fileSha = fileInfo.sha;
+      }
+
+      // 2. Gửi request PUT để ghi đè dữ liệu vào file data.json
+      const payload = JSON.stringify({ members, nextId }, null, 2);
+      const contentBase64 = btoa(unescape(encodeURIComponent(payload)));
+
+      const putRes = await fetch(getUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${ghConfig.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: 'Cập nhật gia phả từ Web Admin',
+          content: contentBase64,
+          sha: fileSha
+        })
+      });
+
+      if (putRes.ok) {
+        setSyncStatus('ok', 'Đã lưu thành công vào data.json');
+      } else {
+        const err = await putRes.json();
+        throw new Error(err.message || 'Lỗi ghi đè file');
+      }
+    } catch (e) {
+      setSyncStatus('error', 'Lỗi lưu dữ liệu: ' + e.message);
+      alert('Lỗi lưu: ' + e.message);
+    }
+  }
+
+  // LOGIN & LOGOUT ADMIN
+  function openLoginModal(){
+    document.getElementById('ghToken').value = ghConfig?.token || '';
+    document.getElementById('ghOwner').value = ghConfig?.owner || '';
+    document.getElementById('ghRepo').value = ghConfig?.repo || '';
+    document.getElementById('loginModal').style.display = 'flex';
+  }
+  function closeLoginModal(){ document.getElementById('loginModal').style.display = 'none'; }
+
+  function loginAdmin(){
+    const token = document.getElementById('ghToken').value.trim();
+    const owner = document.getElementById('ghOwner').value.trim();
+    const repo = document.getElementById('ghRepo').value.trim();
+
+    if (!token || !owner || !repo) {
+      document.getElementById('loginError').textContent = 'Vui lòng nhập đủ thông tin!';
+      return;
+    }
+
+    ghConfig = { token, owner, repo };
+    localStorage.setItem('ghAdminConfig', JSON.stringify(ghConfig));
+    checkAuthUI();
+    closeLoginModal();
+    saveData(); // Lưu thử nghiệm
+  }
+
+  function logout(){
+    ghConfig = null;
+    localStorage.removeItem('ghAdminConfig');
+    checkAuthUI();
+  }
+
+  function setSyncStatus(state, msg){
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    if (state === 'syncing'){ el.textContent = '🔄 ' + msg; el.className = 'sync-status syncing'; }
+    else if (state === 'ok'){ el.textContent = '✅ ' + msg; el.className = 'sync-status ok'; }
+    else if (state === 'error'){ el.textContent = '⚠️ ' + msg; el.className = 'sync-status error'; }
+  }
+
+  // RENDER TREE
+  const ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+  function renderTree(){
+    const root = document.getElementById('treeRoot');
+    root.innerHTML = '';
+    const roots = members.filter(m => m.parentId === null);
+    if (roots.length === 0){
+      root.innerHTML = `<div class="empty-state"><p>Chưa có dữ liệu gia phả.</p></div>`;
+      return;
+    }
+    const ul = document.createElement('ul');
+    roots.forEach(r => ul.appendChild(buildNodeLi(r)));
+    root.appendChild(ul);
+  }
+
+  function buildNodeLi(member){
+    const li = document.createElement('li');
+    li.appendChild(buildCard(member));
+    const children = members.filter(m => m.parentId === member.id);
+    if (children.length > 0){
+      const childUl = document.createElement('ul');
+      children.forEach(c => childUl.appendChild(buildNodeLi(c)));
+      li.appendChild(childUl);
+    }
+    return li;
+  }
+
+  function buildCard(m){
+    const card = document.createElement('div');
+    card.className = `node-card ${m.gender}`;
+    card.onclick = () => openDetail(m.id);
+    card.innerHTML = `
+      <div class="node-eyebrow">Đời ${ROMAN[m.generation] || m.generation}</div>
+      <div class="node-name">${m.name}</div>
+      <div class="node-years">${m.dob || '?'}-${m.dod || 'nay'}</div>
+      ${m.spouse ? `<div class="node-spouse">♥ ${m.spouse}</div>` : ''}
+    `;
+    return card;
+  }
+
+  // MODAL LOGIC
+  function openAddModal(){
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'Thêm thành viên';
+    document.getElementById('mName').value = '';
+    document.getElementById('btnDelete').style.display = 'none';
+    updateParentSelect();
+    document.getElementById('memberModal').style.display = 'flex';
+  }
+  function closeModal(){ document.getElementById('memberModal').style.display = 'none'; }
+
+  function updateParentSelect(){
+    const select = document.getElementById('mParentId');
+    select.innerHTML = '<option value="">-- Tổ tiên --</option>';
+    members.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.name} (Đời ${m.generation})</option>`;
+    });
+  }
+
+  function saveMember(){
+    const name = document.getElementById('mName').value.trim();
+    if (!name) return alert('Vui lòng nhập tên');
+    const gender = document.getElementById('mGender').value;
+    const generation = parseInt(document.getElementById('mGeneration').value) || 1;
+    const dob = document.getElementById('mDob').value;
+    const dod = document.getElementById('mDod').value;
+    const spouse = document.getElementById('mSpouse').value;
+    const note = document.getElementById('mNote').value;
+    const parentId = document.getElementById('mParentId').value ? parseInt(document.getElementById('mParentId').value) : null;
+
+    if (editingId){
+      let m = members.find(x => x.id === editingId);
+      Object.assign(m, { name, gender, generation, dob, dod, spouse, note, parentId });
+    } else {
+      members.push({ id: nextId++, name, gender, generation, dob, dod, spouse, note, parentId });
+    }
+    saveData(); closeModal(); renderTree();
+  }
+
+  function deleteMember(){
+    if (!editingId || !confirm('Xóa người này và con cháu?')) return;
+    function removeBranch(id){
+      const kids = members.filter(m => m.parentId === id).map(m => m.id);
+      members = members.filter(m => m.id !== id);
+      kids.forEach(removeBranch);
+    }
+    removeBranch(editingId);
+    saveData(); closeModal(); renderTree();
+  }
+
+  function openDetail(id){
+    detailId = id;
+    const m = members.find(x => x.id === id);
+    document.getElementById('dName').textContent = m.name;
+    document.getElementById('dContent').innerHTML = `
+      <p><b>Giới tính:</b> ${m.gender === 'male' ? 'Nam' : 'Nữ'}</p>
+      <p><b>Năm sinh - mất:</b> ${m.dob || '?'} - ${m.dod || 'Còn sống'}</p>
+      <p><b>Vợ/Chồng:</b> ${m.spouse || 'Không'}</p>
+      <p><b>Ghi chú:</b> ${m.note || 'Không'}</p>
+    `;
+    document.getElementById('detailModal').style.display = 'flex';
+  }
+  function closeDetail(){ document.getElementById('detailModal').style.display = 'none'; }
+
+  function editFromDetail(){
+    closeDetail(); editingId = detailId;
+    const m = members.find(x => x.id === detailId);
+    document.getElementById('mName').value = m.name;
+    document.getElementById('mGender').value = m.gender;
+    document.getElementById('mGeneration').value = m.generation;
+    document.getElementById('mDob').value = m.dob || '';
+    document.getElementById('mDod').value = m.dod || '';
+    document.getElementById('mSpouse').value = m.spouse || '';
+    document.getElementById('mNote').value = m.note || '';
+    document.getElementById('btnDelete').style.display = 'inline-block';
+    updateParentSelect();
+    document.getElementById('mParentId').value = m.parentId || '';
+    document.getElementById('memberModal').style.display = 'flex';
+  }
+
+  function addChildFromDetail(){
+    closeDetail(); editingId = null;
+    openAddModal();
+    document.getElementById('mParentId').value = detailId;
+  }
+
+  function zoomTree(d){ zoomLevel += d; document.getElementById('zoomFit').style.transform = `scale(${zoomLevel})`; }
+
+  init();
+</script>
+</body>
+</html>
