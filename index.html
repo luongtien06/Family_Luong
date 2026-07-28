@@ -281,14 +281,13 @@
   </div>
 </div>
 
-<script src="services.js"></script>
 <script>
   let members = [];
   let nextId = 1;
   let editingId = null;
   let detailId = null;
   let zoomLevel = 1;
-  let fileSha = null; // Cần thiết để GitHub cho phép ghi đè file json
+  let fileSha = null;
 
   let ghConfig = JSON.parse(localStorage.getItem('ghAdminConfig')) || null;
 
@@ -311,20 +310,28 @@
     }
   }
 
-  // Tải dữ liệu từ file data.json (Dùng GitHub API hoặc Fetch tĩnh)
+  // Tải dữ liệu từ file data.json
   async function loadData(){
     setSyncStatus('syncing', 'Đang tải dữ liệu...');
     try {
-      const res = await fetch('data.json?cache=' + Date.now());
+      // Đã thêm timestamp chống cache tuyệt đối
+      const res = await fetch(`data.json?t=${new Date().getTime()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         members = data.members || [];
         nextId = data.nextId || 1;
         setSyncStatus('ok', 'Đã tải dữ liệu mới nhất');
+      } else {
+        setSyncStatus('error', 'Chưa có file data.json trên GitHub');
       }
     } catch (e) {
       setSyncStatus('error', 'Không đọc được file data.json');
     }
+  }
+
+  // Hàm mã hóa UTF-8 sang Base64 an toàn cho tiếng Việt
+  function utf8ToBase64(str) {
+    return window.btoa(unescape(encodeURIComponent(str)));
   }
 
   // Lưu dữ liệu trực tiếp vào repo GitHub thông qua GitHub API
@@ -336,10 +343,14 @@
     setSyncStatus('syncing', 'Đang lưu vào GitHub...');
 
     try {
-      // 1. Lấy SHA mới nhất của file data.json
       const getUrl = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data.json`;
+      
+      // 1. Lấy SHA mới nhất của file data.json từ GitHub API
       const getRes = await fetch(getUrl, {
-        headers: { 'Authorization': `Bearer ${ghConfig.token}` }
+        headers: { 
+          'Authorization': `Bearer ${ghConfig.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
       });
 
       if (getRes.ok) {
@@ -347,32 +358,34 @@
         fileSha = fileInfo.sha;
       }
 
-      // 2. Gửi request PUT để ghi đè dữ liệu vào file data.json
+      // 2. Chuẩn bị payload và mã hóa Base64
       const payload = JSON.stringify({ members, nextId }, null, 2);
-      const contentBase64 = btoa(unescape(encodeURIComponent(payload)));
+      const contentBase64 = utf8ToBase64(payload);
 
+      // 3. Gửi request PUT để cập nhật file trên GitHub
       const putRes = await fetch(getUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${ghConfig.token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
         },
         body: JSON.stringify({
           message: 'Cập nhật gia phả từ Web Admin',
           content: contentBase64,
-          sha: fileSha
+          sha: fileSha || undefined
         })
       });
 
       if (putRes.ok) {
-        setSyncStatus('ok', 'Đã lưu thành công vào data.json');
+        setSyncStatus('ok', 'Đã lưu thành công! (GitHub cần 1-2 phút để cập nhật Pages)');
       } else {
         const err = await putRes.json();
         throw new Error(err.message || 'Lỗi ghi đè file');
       }
     } catch (e) {
       setSyncStatus('error', 'Lỗi lưu dữ liệu: ' + e.message);
-      alert('Lỗi lưu: ' + e.message);
+      alert('Lỗi lưu: ' + e.message + '\n\nHãy kiểm tra lại Token, tên Owner và Repo!');
     }
   }
 
@@ -399,7 +412,7 @@
     localStorage.setItem('ghAdminConfig', JSON.stringify(ghConfig));
     checkAuthUI();
     closeLoginModal();
-    saveData(); // Lưu thử nghiệm
+    saveData();
   }
 
   function logout(){
@@ -492,7 +505,10 @@
     } else {
       members.push({ id: nextId++, name, gender, generation, dob, dod, spouse, note, parentId });
     }
-    saveData(); closeModal(); renderTree();
+    
+    renderTree();
+    closeModal();
+    saveData(); // Gọi hàm lưu lên GitHub
   }
 
   function deleteMember(){
@@ -503,7 +519,9 @@
       kids.forEach(removeBranch);
     }
     removeBranch(editingId);
-    saveData(); closeModal(); renderTree();
+    renderTree();
+    closeModal();
+    saveData();
   }
 
   function openDetail(id){
