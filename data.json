@@ -1,4 +1,16 @@
 {
-  "members": [],
-  "nextId": 1
+  "members": [
+    {
+      "id": 1,
+      "name": "Lường Hữu Nguyên",
+      "gender": "male",
+      "generation": 1,
+      "dob": "1939",
+      "dod": "",
+      "spouse": "Lê Thị Tính",
+      "note": "",
+      "parentId": null
+    }
+  ],
+  "nextId": 2
 }
