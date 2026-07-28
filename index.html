@@ -297,24 +297,28 @@
     renderTree();
   }
 
+  // Hàm kiểm tra quyền Admin để ẩn/hiện các nút thao tác
   function checkAuthUI(){
     const adminElements = document.querySelectorAll('.admin-only');
     const loginBtn = document.getElementById('btnLogin');
     
-    if (ghConfig && ghConfig.token) {
+    if (isAdmin()) {
       adminElements.forEach(el => el.classList.remove('admin-only'));
-      loginBtn.style.display = 'none';
+      if (loginBtn) loginBtn.style.display = 'none';
     } else {
       adminElements.forEach(el => el.classList.add('admin-only'));
-      loginBtn.style.display = 'inline-flex';
+      if (loginBtn) loginBtn.style.display = 'inline-flex';
     }
+  }
+
+  function isAdmin(){
+    return ghConfig && ghConfig.token && ghConfig.owner && ghConfig.repo;
   }
 
   // Tải dữ liệu từ file data.json
   async function loadData(){
     setSyncStatus('syncing', 'Đang tải dữ liệu...');
     try {
-      // Đã thêm timestamp chống cache tuyệt đối
       const res = await fetch(`data.json?t=${new Date().getTime()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
@@ -329,15 +333,14 @@
     }
   }
 
-  // Hàm mã hóa UTF-8 sang Base64 an toàn cho tiếng Việt
   function utf8ToBase64(str) {
     return window.btoa(unescape(encodeURIComponent(str)));
   }
 
-  // Lưu dữ liệu trực tiếp vào repo GitHub thông qua GitHub API
+  // Lưu dữ liệu vào GitHub API
   async function saveData(){
-    if (!ghConfig || !ghConfig.token) {
-      alert('Bạn phải Đăng nhập Admin để thực hiện lưu!');
+    if (!isAdmin()) {
+      alert('Bạn không có quyền thực hiện thao tác này!');
       return;
     }
     setSyncStatus('syncing', 'Đang lưu vào GitHub...');
@@ -345,7 +348,6 @@
     try {
       const getUrl = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data.json`;
       
-      // 1. Lấy SHA mới nhất của file data.json từ GitHub API
       const getRes = await fetch(getUrl, {
         headers: { 
           'Authorization': `Bearer ${ghConfig.token}`,
@@ -358,11 +360,9 @@
         fileSha = fileInfo.sha;
       }
 
-      // 2. Chuẩn bị payload và mã hóa Base64
       const payload = JSON.stringify({ members, nextId }, null, 2);
       const contentBase64 = utf8ToBase64(payload);
 
-      // 3. Gửi request PUT để cập nhật file trên GitHub
       const putRes = await fetch(getUrl, {
         method: 'PUT',
         headers: {
@@ -378,14 +378,14 @@
       });
 
       if (putRes.ok) {
-        setSyncStatus('ok', 'Đã lưu thành công! (GitHub cần 1-2 phút để cập nhật Pages)');
+        setSyncStatus('ok', 'Đã lưu thành công!');
       } else {
         const err = await putRes.json();
         throw new Error(err.message || 'Lỗi ghi đè file');
       }
     } catch (e) {
       setSyncStatus('error', 'Lỗi lưu dữ liệu: ' + e.message);
-      alert('Lỗi lưu: ' + e.message + '\n\nHãy kiểm tra lại Token, tên Owner và Repo!');
+      alert('Lỗi lưu: ' + e.message);
     }
   }
 
@@ -469,8 +469,9 @@
     return card;
   }
 
-  // MODAL LOGIC
+  // MODAL LOGIC VÀ KHÓA PHÂN QUYỀN TRỰC TIẾP
   function openAddModal(){
+    if (!isAdmin()) { alert("Chỉ Admin mới có quyền thêm thành viên!"); return; }
     editingId = null;
     document.getElementById('modalTitle').textContent = 'Thêm thành viên';
     document.getElementById('mName').value = '';
@@ -489,6 +490,7 @@
   }
 
   function saveMember(){
+    if (!isAdmin()) return;
     const name = document.getElementById('mName').value.trim();
     if (!name) return alert('Vui lòng nhập tên');
     const gender = document.getElementById('mGender').value;
@@ -508,10 +510,11 @@
     
     renderTree();
     closeModal();
-    saveData(); // Gọi hàm lưu lên GitHub
+    saveData();
   }
 
   function deleteMember(){
+    if (!isAdmin()) return;
     if (!editingId || !confirm('Xóa người này và con cháu?')) return;
     function removeBranch(id){
       const kids = members.filter(m => m.parentId === id).map(m => m.id);
@@ -534,11 +537,13 @@
       <p><b>Vợ/Chồng:</b> ${m.spouse || 'Không'}</p>
       <p><b>Ghi chú:</b> ${m.note || 'Không'}</p>
     `;
+    checkAuthUI(); // Cập nhật lại giao diện nút bấm theo quyền Admin trước khi hiển thị Modal
     document.getElementById('detailModal').style.display = 'flex';
   }
   function closeDetail(){ document.getElementById('detailModal').style.display = 'none'; }
 
   function editFromDetail(){
+    if (!isAdmin()) { alert("Chỉ Admin mới có quyền sửa!"); return; }
     closeDetail(); editingId = detailId;
     const m = members.find(x => x.id === detailId);
     document.getElementById('mName').value = m.name;
@@ -555,9 +560,51 @@
   }
 
   function addChildFromDetail(){
+    if (!isAdmin()) { alert("Chỉ Admin mới có quyền thêm con!"); return; }
     closeDetail(); editingId = null;
     openAddModal();
     document.getElementById('mParentId').value = detailId;
+  }
+
+  // TÍNH NĂNG XUẤT FILE / NHẬP FILE METADATA
+  function exportData(){
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ members, nextId }, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "gia_pha_data.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  }
+
+  function importData(input){
+    if (!isAdmin()) { alert("Chỉ Admin mới có quyền nhập file!"); return; }
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.members) {
+          members = data.members;
+          nextId = data.nextId || members.length + 1;
+          renderTree();
+          saveData();
+          alert('Nhập dữ liệu thành công!');
+        }
+      } catch (err) { alert('File JSON không hợp lệ!'); }
+    };
+    reader.readAsText(file);
+  }
+
+  function clearAll(){
+    if (!isAdmin()) return;
+    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ cây gia phả?')){
+      members = [];
+      nextId = 1;
+      renderTree();
+      saveData();
+    }
   }
 
   function zoomTree(d){ zoomLevel += d; document.getElementById('zoomFit').style.transform = `scale(${zoomLevel})`; }
