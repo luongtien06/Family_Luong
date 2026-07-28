@@ -10,7 +10,18 @@
       "spouse": "Lê Thị Tính",
       "note": "",
       "parentId": null
+    },
+    {
+      "id": 2,
+      "name": "Lường Văn Thái",
+      "gender": "male",
+      "generation": 2,
+      "dob": "1954",
+      "dod": "",
+      "spouse": "Lê Thị Huê",
+      "note": "",
+      "parentId": 1
     }
   ],
-  "nextId": 2
+  "nextId": 3
 }
