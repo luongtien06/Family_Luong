@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gia Phả Điện Tử</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,8 +73,10 @@
   .btn .ic{ font-size: 15px; line-height:1; }
   .btn-add{ background: var(--lacquer); color:#fff; }
   .btn-export{ background: var(--indigo); color:#fff; }
-  .btn-import{ background: var(--gold); color:#fff; }
-  .btn-clear{ background:#fff; color: var(--lacquer); border-color: var(--lacquer); }
+  .btn-import{ background: var(--gold); color:#fff; cursor: pointer; }
+  /* hide native file input, use styled label instead */
+  input[type="file"]{ display:none; }
+  .btn-clear{ background:#fff; color: var(--lacquer); border-color: var(--lacquer); cursor:pointer; }
   .btn-login{ background: var(--ink); color:#fff; }
   .btn-logout{ background:#7a2020; color:#fff; }
 
@@ -142,6 +144,8 @@
   .form-group input, .form-group select, .form-group textarea{ width:100%; padding: 10px 12px; border:1px solid var(--paper-line); border-radius: 8px; font-size:14px; background: #fbf7ee; }
   .form-row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
   .modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+  .modal-note{ font-size:12px; color: var(--ink-soft); margin-bottom: 12px; }
+  .error-text{ color: #b3261e; font-size: 12px; margin-bottom: 10px; }
   .btn-save{ background: var(--lacquer); color:#fff; }
   .btn-cancel{ background:#efe9db; color: var(--ink); }
   .btn-delete{ background:#fff; color:#b3261e; border:1px solid #b3261e; }
@@ -160,9 +164,9 @@
   <div class="controls">
     <button class="btn btn-add admin-only" onclick="openAddModal()"><span class="ic">➕</span><span class="label">Thêm tổ tiên</span></button>
     <button class="btn btn-export" onclick="exportData()"><span class="ic">💾</span><span class="label">Xuất file</span></button>
-    <label class="btn btn-import admin-only" style="cursor:pointer;">
+    <label class="btn btn-import admin-only">
       <span class="ic">📁</span><span class="label">Nhập file</span>
-      <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="importData(this)">
+      <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
     </label>
     <button class="btn btn-clear admin-only" onclick="clearAll()"><span class="ic">🗑️</span><span class="label">Xóa hết</span></button>
     
@@ -194,7 +198,7 @@
 <div class="modal-overlay" id="loginModal">
   <div class="modal-box">
     <h2>Cấu hình Admin (GitHub Sync)</h2>
-    <p style="font-size:12px; color: var(--ink-soft); margin-bottom: 12px;">Nhập Personal Access Token GitHub của bạn để kích hoạt quyền Thêm/Sửa/Xóa và lưu vào file <code>data.json</code>.</p>
+    <p class="modal-note">Nhập Personal Access Token GitHub của bạn để kích hoạt quyền Thêm/Sửa/Xóa và lưu vào file <code>data.json</code>.</p>
     <div class="form-group">
       <label>GitHub Personal Access Token *</label>
       <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
@@ -209,7 +213,7 @@
         <input type="text" id="ghRepo" placeholder="VD: Family_Luong">
       </div>
     </div>
-    <p id="loginError" style="color: #b3261e; font-size: 12px; margin-bottom: 10px;"></p>
+    <p id="loginError" class="error-text"></p>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeLoginModal()">Hủy</button>
       <button class="btn btn-save" onclick="loginAdmin()">Xác nhận Admin</button>
@@ -272,7 +276,7 @@
 <div class="modal-overlay" id="detailModal">
   <div class="modal-box">
     <h2 id="dName"></h2>
-    <div id="dContent" style="line-height: 1.8; font-size:14px;"></div>
+    <div id="dContent" class="detail-content"></div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeDetail()">Đóng</button>
       <button class="btn btn-add admin-only" onclick="editFromDetail()">Sửa</button>
@@ -282,6 +286,9 @@
 </div>
 
 <script>
+  // ==========================================
+  // KHỞI TẠO BIẾN CẤU HÌNH & TRẠNG THÁI
+  // ==========================================
   let members = [];
   let nextId = 1;
   let editingId = null;
@@ -289,16 +296,20 @@
   let zoomLevel = 1;
   let fileSha = null;
 
-  let ghConfig = JSON.parse(localStorage.getItem('ghAdminConfig')) || null;
+  // Lấy cấu hình Admin từ sessionStorage (tự động đăng xuất khi đóng trình duyệt)
+  let ghConfig = JSON.parse(sessionStorage.getItem('ghAdminConfig')) || null;
 
-  async function init(){
+  // Tự động chạy khi ứng dụng được tải
+  async function init() {
     checkAuthUI();
     await loadData();
     renderTree();
   }
 
-  // Hàm kiểm tra quyền Admin để ẩn/hiện các nút thao tác
-  function checkAuthUI(){
+  // ==========================================
+  // XÁC THỰC VÀ PHÂN QUYỀN (AUTH & PERMISSION)
+  // ==========================================
+  function checkAuthUI() {
     const adminElements = document.querySelectorAll('.admin-only');
     const loginBtn = document.getElementById('btnLogin');
     
@@ -311,39 +322,108 @@
     }
   }
 
-  function isAdmin(){
-    return ghConfig && ghConfig.token && ghConfig.owner && ghConfig.repo;
+  function isAdmin() {
+    return !!(ghConfig && ghConfig.token && ghConfig.owner && ghConfig.repo);
   }
 
-  // Tải dữ liệu từ file data.json
-  async function loadData(){
-    setSyncStatus('syncing', 'Đang tải dữ liệu...');
-    try {
-      const res = await fetch(`data.json?t=${new Date().getTime()}`, { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        members = data.members || [];
-        nextId = data.nextId || 1;
-        setSyncStatus('ok', 'Đã tải dữ liệu mới nhất');
-      } else {
-        setSyncStatus('error', 'Chưa có file data.json trên GitHub');
-      }
-    } catch (e) {
-      setSyncStatus('error', 'Không đọc được file data.json');
+  function openLoginModal() {
+    document.getElementById('ghToken').value = ghConfig?.token || '';
+    document.getElementById('ghOwner').value = ghConfig?.owner || '';
+    document.getElementById('ghRepo').value = ghConfig?.repo || '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('loginModal').style.display = 'flex';
+  }
+
+  function closeLoginModal() { 
+    document.getElementById('loginModal').style.display = 'none'; 
+  }
+
+  function loginAdmin() {
+    const token = document.getElementById('ghToken').value.trim();
+    const owner = document.getElementById('ghOwner').value.trim();
+    const repo = document.getElementById('ghRepo').value.trim();
+
+    if (!token || !owner || !repo) {
+      document.getElementById('loginError').textContent = 'Vui lòng nhập đủ thông tin!';
+      return;
     }
+
+    ghConfig = { token, owner, repo };
+    // Lưu vào sessionStorage để khi đóng tab/trình duyệt sẽ tự đăng xuất
+    sessionStorage.setItem('ghAdminConfig', JSON.stringify(ghConfig));
+    checkAuthUI();
+    closeLoginModal();
+    saveData();
+  }
+
+  function logout() {
+    ghConfig = null;
+    sessionStorage.removeItem('ghAdminConfig');
+    checkAuthUI();
+    // Tải lại dữ liệu từ file để loại bỏ dữ liệu tạm chưa sync nếu có
+    loadData().then(renderTree);
+  }
+
+  // ==========================================
+  // ĐỒNG BỘ DỮ LIỆU (DATA SYNC & API)
+  // ==========================================
+  function setSyncStatus(state, msg) {
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    if (state === 'syncing') { el.textContent = '🔄 ' + msg; el.className = 'sync-status syncing'; }
+    else if (state === 'ok') { el.textContent = '✅ ' + msg; el.className = 'sync-status ok'; }
+    else if (state === 'error') { el.textContent = '⚠️ ' + msg; el.className = 'sync-status error'; }
   }
 
   function utf8ToBase64(str) {
     return window.btoa(unescape(encodeURIComponent(str)));
   }
 
-  // Lưu dữ liệu vào GitHub API
-  async function saveData(){
+  async function loadData() {
+    setSyncStatus('syncing', 'Đang tải dữ liệu...');
+    
+    // 1. Đọc cache từ localStorage (giúp Admin thấy dữ liệu ngay cả khi F5 lúc GitHub đang build)
+    const localTemp = localStorage.getItem('temp_family_data');
+    if (localTemp) {
+      try {
+        const data = JSON.parse(localTemp);
+        members = data.members || [];
+        nextId = data.nextId || 1;
+      } catch(e) { console.error('Cache error:', e); }
+    }
+
+    // 2. Fetch dữ liệu mới nhất từ GitHub Pages
+    try {
+      const res = await fetch(`data.json?t=${new Date().getTime()}`, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        members = data.members || [];
+        nextId = data.nextId || 1;
+        
+        // Cập nhật lại cache đồng bộ
+        localStorage.setItem('temp_family_data', JSON.stringify({ members, nextId }));
+        setSyncStatus('ok', 'Đã tải dữ liệu mới nhất');
+      } else {
+        if (!localTemp) setSyncStatus('ok', 'Khởi tạo cây gia phả mới');
+      }
+    } catch (e) {
+      if (localTemp) {
+        setSyncStatus('ok', 'Đang hiển thị dữ liệu từ bộ nhớ tạm');
+      } else {
+        setSyncStatus('error', 'Không đọc được file data.json');
+      }
+    }
+  }
+
+  async function saveData() {
     if (!isAdmin()) {
       alert('Bạn không có quyền thực hiện thao tác này!');
       return;
     }
     setSyncStatus('syncing', 'Đang lưu vào GitHub...');
+
+    // Lưu ngay vào localStorage bộ nhớ tạm
+    localStorage.setItem('temp_family_data', JSON.stringify({ members, nextId }));
 
     try {
       const getUrl = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data.json`;
@@ -378,6 +458,8 @@
       });
 
       if (putRes.ok) {
+        const resData = await putRes.json();
+        fileSha = resData.content.sha; // Cập nhật SHA mới nhất
         setSyncStatus('ok', 'Đã lưu thành công!');
       } else {
         const err = await putRes.json();
@@ -385,70 +467,38 @@
       }
     } catch (e) {
       setSyncStatus('error', 'Lỗi lưu dữ liệu: ' + e.message);
-      alert('Lỗi lưu: ' + e.message);
+      alert('Lỗi lưu GitHub: ' + e.message);
     }
   }
 
-  // LOGIN & LOGOUT ADMIN
-  function openLoginModal(){
-    document.getElementById('ghToken').value = ghConfig?.token || '';
-    document.getElementById('ghOwner').value = ghConfig?.owner || '';
-    document.getElementById('ghRepo').value = ghConfig?.repo || '';
-    document.getElementById('loginModal').style.display = 'flex';
-  }
-  function closeLoginModal(){ document.getElementById('loginModal').style.display = 'none'; }
+  // ==========================================
+  // RENDER CÂY GIA PHẢ (TREE RENDERING)
+  // ==========================================
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
 
-  function loginAdmin(){
-    const token = document.getElementById('ghToken').value.trim();
-    const owner = document.getElementById('ghOwner').value.trim();
-    const repo = document.getElementById('ghRepo').value.trim();
-
-    if (!token || !owner || !repo) {
-      document.getElementById('loginError').textContent = 'Vui lòng nhập đủ thông tin!';
-      return;
-    }
-
-    ghConfig = { token, owner, repo };
-    localStorage.setItem('ghAdminConfig', JSON.stringify(ghConfig));
-    checkAuthUI();
-    closeLoginModal();
-    saveData();
-  }
-
-  function logout(){
-    ghConfig = null;
-    localStorage.removeItem('ghAdminConfig');
-    checkAuthUI();
-  }
-
-  function setSyncStatus(state, msg){
-    const el = document.getElementById('syncStatus');
-    if (!el) return;
-    if (state === 'syncing'){ el.textContent = '🔄 ' + msg; el.className = 'sync-status syncing'; }
-    else if (state === 'ok'){ el.textContent = '✅ ' + msg; el.className = 'sync-status ok'; }
-    else if (state === 'error'){ el.textContent = '⚠️ ' + msg; el.className = 'sync-status error'; }
-  }
-
-  // RENDER TREE
-  const ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
-  function renderTree(){
+  function renderTree() {
     const root = document.getElementById('treeRoot');
     root.innerHTML = '';
-    const roots = members.filter(m => m.parentId === null);
-    if (roots.length === 0){
-      root.innerHTML = `<div class="empty-state"><p>Chưa có dữ liệu gia phả.</p></div>`;
+    
+    // Tìm các gốc (không có parentId)
+    const roots = members.filter(m => m.parentId === null || m.parentId === undefined || m.parentId === "");
+    
+    if (roots.length === 0) {
+      root.innerHTML = `<div class="empty-state"><p>Chưa có dữ liệu gia phả. Hãy bấm "Thêm tổ tiên" để bắt đầu.</p></div>`;
       return;
     }
+
     const ul = document.createElement('ul');
     roots.forEach(r => ul.appendChild(buildNodeLi(r)));
     root.appendChild(ul);
   }
 
-  function buildNodeLi(member){
+  function buildNodeLi(member) {
     const li = document.createElement('li');
     li.appendChild(buildCard(member));
+    
     const children = members.filter(m => m.parentId === member.id);
-    if (children.length > 0){
+    if (children.length > 0) {
       const childUl = document.createElement('ul');
       children.forEach(c => childUl.appendChild(buildNodeLi(c)));
       li.appendChild(childUl);
@@ -456,56 +506,104 @@
     return li;
   }
 
-  function buildCard(m){
+  function buildCard(m) {
     const card = document.createElement('div');
     card.className = `node-card ${m.gender}`;
     card.onclick = () => openDetail(m.id);
+    
+    const genDisplay = ROMAN[m.generation] || m.generation;
     card.innerHTML = `
-      <div class="node-eyebrow">Đời ${ROMAN[m.generation] || m.generation}</div>
-      <div class="node-name">${m.name}</div>
-      <div class="node-years">${m.dob || '?'}-${m.dod || 'nay'}</div>
-      ${m.spouse ? `<div class="node-spouse">♥ ${m.spouse}</div>` : ''}
+      <div class="node-eyebrow">Đời ${genDisplay}</div>
+      <div class="node-name">${escapeHTML(m.name)}</div>
+      <div class="node-years">${escapeHTML(m.dob || '?')} - ${escapeHTML(m.dod || 'nay')}</div>
+      ${m.spouse ? `<div class="node-spouse">♥ ${escapeHTML(m.spouse)}</div>` : ''}
     `;
     return card;
   }
 
-  // MODAL LOGIC VÀ KHÓA PHÂN QUYỀN TRỰC TIẾP
-  function openAddModal(){
-    if (!isAdmin()) { alert("Chỉ Admin mới có quyền thêm thành viên!"); return; }
-    editingId = null;
-    document.getElementById('modalTitle').textContent = 'Thêm thành viên';
-    document.getElementById('mName').value = '';
-    document.getElementById('btnDelete').style.display = 'none';
-    updateParentSelect();
-    document.getElementById('memberModal').style.display = 'flex';
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, match => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[match]));
   }
-  function closeModal(){ document.getElementById('memberModal').style.display = 'none'; }
 
-  function updateParentSelect(){
+  // ==========================================
+  // THAO TÁC THÊM / SỬA / XÓA THÀNH VIÊN
+  // ==========================================
+  function updateParentSelect(excludeId = null) {
     const select = document.getElementById('mParentId');
-    select.innerHTML = '<option value="">-- Tổ tiên --</option>';
+    select.innerHTML = '<option value="">-- Tổ tiên (Gốc) --</option>';
+    
     members.forEach(m => {
-      select.innerHTML += `<option value="${m.id}">${m.name} (Đời ${m.generation})</option>`;
+      if (m.id !== excludeId) {
+        select.innerHTML += `<option value="${m.id}">${escapeHTML(m.name)} (Đời ${m.generation})</option>`;
+      }
     });
   }
 
-  function saveMember(){
+  // Tự động gợi ý Thế hệ dựa theo Cha/Mẹ được chọn
+  function handleParentChange() {
+    const parentId = document.getElementById('mParentId').value;
+    const genInput = document.getElementById('mGeneration');
+    
+    if (parentId) {
+      const parent = members.find(m => m.id === parseInt(parentId));
+      if (parent) {
+        genInput.value = (parseInt(parent.generation) || 1) + 1;
+      }
+    } else {
+      if (!editingId) genInput.value = 1;
+    }
+  }
+
+  function openAddModal() {
+    if (!isAdmin()) { alert("Chỉ Admin mới có quyền thực hiện!"); return; }
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'Thêm thành viên';
+    document.getElementById('mName').value = '';
+    document.getElementById('mGender').value = 'male';
+    document.getElementById('mGeneration').value = '1';
+    document.getElementById('mDob').value = '';
+    document.getElementById('mDod').value = '';
+    document.getElementById('mSpouse').value = '';
+    document.getElementById('mNote').value = '';
+    document.getElementById('btnDelete').style.display = 'none';
+    
+    updateParentSelect();
+    document.getElementById('mParentId').onchange = handleParentChange;
+    document.getElementById('memberModal').style.display = 'flex';
+  }
+
+  function closeModal() { 
+    document.getElementById('memberModal').style.display = 'none'; 
+  }
+
+  function saveMember() {
     if (!isAdmin()) return;
+    
     const name = document.getElementById('mName').value.trim();
-    if (!name) return alert('Vui lòng nhập tên');
+    if (!name) return alert('Vui lòng nhập Họ và tên!');
+    
     const gender = document.getElementById('mGender').value;
     const generation = parseInt(document.getElementById('mGeneration').value) || 1;
-    const dob = document.getElementById('mDob').value;
-    const dod = document.getElementById('mDod').value;
-    const spouse = document.getElementById('mSpouse').value;
-    const note = document.getElementById('mNote').value;
-    const parentId = document.getElementById('mParentId').value ? parseInt(document.getElementById('mParentId').value) : null;
+    const dob = document.getElementById('mDob').value.trim();
+    const dod = document.getElementById('mDod').value.trim();
+    const spouse = document.getElementById('mSpouse').value.trim();
+    const note = document.getElementById('mNote').value.trim();
+    const pVal = document.getElementById('mParentId').value;
+    const parentId = pVal ? parseInt(pVal) : null;
 
-    if (editingId){
+    if (editingId) {
       let m = members.find(x => x.id === editingId);
-      Object.assign(m, { name, gender, generation, dob, dod, spouse, note, parentId });
+      if (m) {
+        Object.assign(m, { name, gender, generation, dob, dod, spouse, note, parentId });
+      }
     } else {
-      members.push({ id: nextId++, name, gender, generation, dob, dod, spouse, note, parentId });
+      members.push({
+        id: nextId++,
+        name, gender, generation, dob, dod, spouse, note, parentId
+      });
     }
     
     renderTree();
@@ -513,93 +611,124 @@
     saveData();
   }
 
-  function deleteMember(){
+  function deleteMember() {
     if (!isAdmin()) return;
-    if (!editingId || !confirm('Xóa người này và con cháu?')) return;
-    function removeBranch(id){
+    if (!editingId || !confirm('CẢNH BÁO: Xóa người này sẽ xóa toàn bộ con cháu của họ. Bạn có chắc chắn?')) return;
+    
+    function removeBranch(id) {
       const kids = members.filter(m => m.parentId === id).map(m => m.id);
       members = members.filter(m => m.id !== id);
       kids.forEach(removeBranch);
     }
+    
     removeBranch(editingId);
     renderTree();
     closeModal();
     saveData();
   }
 
-  function openDetail(id){
+  // ==========================================
+  // CHI TIẾT VÀ BẢNG THÔNG TIN (DETAIL MODAL)
+  // ==========================================
+  function openDetail(id) {
     detailId = id;
     const m = members.find(x => x.id === id);
+    if (!m) return;
+
     document.getElementById('dName').textContent = m.name;
     document.getElementById('dContent').innerHTML = `
+      <p><b>Thế hệ:</b> Đời thứ ${ROMAN[m.generation] || m.generation}</p>
       <p><b>Giới tính:</b> ${m.gender === 'male' ? 'Nam' : 'Nữ'}</p>
-      <p><b>Năm sinh - mất:</b> ${m.dob || '?'} - ${m.dod || 'Còn sống'}</p>
-      <p><b>Vợ/Chồng:</b> ${m.spouse || 'Không'}</p>
-      <p><b>Ghi chú:</b> ${m.note || 'Không'}</p>
+      <p><b>Năm sinh - mất:</b> ${escapeHTML(m.dob) || '?'} - ${escapeHTML(m.dod) || 'Còn sống'}</p>
+      <p><b>Vợ/Chồng:</b> ${escapeHTML(m.spouse) || 'Chưa cập nhật'}</p>
+      <p><b>Ghi chú:</b> ${escapeHTML(m.note) || 'Không có'}</p>
     `;
-    checkAuthUI(); // Cập nhật lại giao diện nút bấm theo quyền Admin trước khi hiển thị Modal
+    
+    checkAuthUI(); 
     document.getElementById('detailModal').style.display = 'flex';
   }
-  function closeDetail(){ document.getElementById('detailModal').style.display = 'none'; }
 
-  function editFromDetail(){
+  function closeDetail() { 
+    document.getElementById('detailModal').style.display = 'none'; 
+  }
+
+  function editFromDetail() {
     if (!isAdmin()) { alert("Chỉ Admin mới có quyền sửa!"); return; }
-    closeDetail(); editingId = detailId;
+    closeDetail(); 
+    editingId = detailId;
+    
     const m = members.find(x => x.id === detailId);
-    document.getElementById('mName').value = m.name;
-    document.getElementById('mGender').value = m.gender;
-    document.getElementById('mGeneration').value = m.generation;
+    if (!m) return;
+
+    document.getElementById('modalTitle').textContent = 'Sửa thông tin';
+    document.getElementById('mName').value = m.name || '';
+    document.getElementById('mGender').value = m.gender || 'male';
+    document.getElementById('mGeneration').value = m.generation || 1;
     document.getElementById('mDob').value = m.dob || '';
     document.getElementById('mDod').value = m.dod || '';
     document.getElementById('mSpouse').value = m.spouse || '';
     document.getElementById('mNote').value = m.note || '';
+    
+    updateParentSelect(m.id);
+    document.getElementById('mParentId').value = m.parentId !== null ? m.parentId : '';
+    document.getElementById('mParentId').onchange = handleParentChange;
+    
     document.getElementById('btnDelete').style.display = 'inline-block';
-    updateParentSelect();
-    document.getElementById('mParentId').value = m.parentId || '';
     document.getElementById('memberModal').style.display = 'flex';
   }
 
-  function addChildFromDetail(){
+  function addChildFromDetail() {
     if (!isAdmin()) { alert("Chỉ Admin mới có quyền thêm con!"); return; }
-    closeDetail(); editingId = null;
+    const parentId = detailId;
+    closeDetail(); 
+    
     openAddModal();
-    document.getElementById('mParentId').value = detailId;
+    document.getElementById('mParentId').value = parentId;
+    handleParentChange(); // Tự động tính đời cho con
   }
 
-  // TÍNH NĂNG XUẤT FILE / NHẬP FILE METADATA
-  function exportData(){
+  // ==========================================
+  // XUẤT / NHẬP FILE & TÍNH NĂNG KHÁC
+  // ==========================================
+  function exportData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ members, nextId }, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", "gia_pha_data.json");
+    downloadAnchor.setAttribute("download", `gia_pha_data_${new Date().toISOString().slice(0,10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
   }
 
-  function importData(input){
+  function importData(input) {
     if (!isAdmin()) { alert("Chỉ Admin mới có quyền nhập file!"); return; }
     const file = input.files[0];
     if (!file) return;
+    
     const reader = new FileReader();
-    reader.onload = function(e){
+    reader.onload = function(e) {
       try {
         const data = JSON.parse(e.target.result);
-        if (data.members) {
+        if (data.members && Array.isArray(data.members)) {
           members = data.members;
-          nextId = data.nextId || members.length + 1;
+          nextId = data.nextId || (Math.max(...members.map(m => m.id), 0) + 1);
           renderTree();
           saveData();
           alert('Nhập dữ liệu thành công!');
+        } else {
+          alert('File JSON không đúng cấu trúc gia phả!');
         }
-      } catch (err) { alert('File JSON không hợp lệ!'); }
+      } catch (err) { 
+        alert('File JSON không hợp lệ!'); 
+      }
+      input.value = ''; // Reset input file
     };
     reader.readAsText(file);
   }
 
-  function clearAll(){
+  function clearAll() {
     if (!isAdmin()) return;
-    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ cây gia phả?')){
+    if (confirm('CẢNH BÁO TỐI CAO: Bạn có chắc chắn muốn XÓA SẠCH toàn bộ dữ liệu cây gia phả?')) {
       members = [];
       nextId = 1;
       renderTree();
@@ -607,8 +736,22 @@
     }
   }
 
-  function zoomTree(d){ zoomLevel += d; document.getElementById('zoomFit').style.transform = `scale(${zoomLevel})`; }
+  function zoomTree(d) { 
+    zoomLevel = Math.max(0.3, Math.min(2.0, zoomLevel + d)); // Giới hạn phóng to/thu nhỏ
+    document.getElementById('zoomFit').style.transform = `scale(${zoomLevel})`; 
+    document.getElementById('zoomLabel').textContent = `${Math.round(zoomLevel * 100)}%`;
+  }
 
+  // Lắng nghe sự kiện phím Esc để đóng các modal
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      closeDetail();
+      closeLoginModal();
+    }
+  });
+
+  // Chạy ứng dụng
   init();
 </script>
 </body>
