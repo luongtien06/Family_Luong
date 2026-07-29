@@ -21,18 +21,7 @@
       "spouse": "Lê Thị Huê",
       "note": "",
       "parentId": 1
-    },
-    {
-      "id": 3,
-      "name": "Lường Hữu Lai",
-      "gender": "male",
-      "generation": 2,
-      "dob": "1959",
-      "dod": "",
-      "spouse": "Hoàng Thị Nhung",
-      "note": "",
-      "parentId": 1
     }
   ],
-  "nextId": 4
+  "nextId": 3
 }
