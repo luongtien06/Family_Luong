@@ -135,6 +135,15 @@
   .node-eyebrow{ font-family: var(--font-mono); font-size: 10px; color: var(--gold); text-transform: uppercase; }
   .node-name{ font-family: var(--font-display); font-weight: 700; font-size: 15px; }
   .node-years, .node-spouse{ font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
+  .node-occupation{ font-size: 11px; color: var(--ink-soft); font-style: italic; margin-top: 3px; }
+  .node-status{
+    display:inline-flex; align-items:center; gap:4px;
+    margin-top: 8px; font-size: 10px; font-weight:600;
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .node-status.living{ background: var(--gold-tint); color:#7a5c14; }
+  .node-status.deceased{ background:#eceae4; color: var(--ink-soft); }
+  .node-status .dot{ width:6px; height:6px; }
 
   .modal-overlay{ display:none; position: fixed; inset:0; background: rgba(36,29,23,0.55); justify-content:center; align-items:center; z-index:100; padding: 16px; }
   .modal-box{ background:#fffdf8; border-radius: 16px; width:100%; max-width: 440px; padding: 26px 24px; max-height: 88vh; overflow-y:auto; border-top: 5px solid var(--lacquer); }
@@ -255,6 +264,10 @@
     <div class="form-group">
       <label>Vợ / Chồng</label>
       <input type="text" id="mSpouse">
+    </div>
+    <div class="form-group">
+      <label>Nghề nghiệp</label>
+      <input type="text" id="mOccupation" placeholder="VD: Giáo viên, Nông dân, Bộ đội...">
     </div>
     <div class="form-group">
       <label>Ghi chú</label>
@@ -512,11 +525,16 @@
     card.onclick = () => openDetail(m.id);
     
     const genDisplay = ROMAN[m.generation] || m.generation;
+    const isDeceased = !!(m.dod && String(m.dod).trim());
     card.innerHTML = `
       <div class="node-eyebrow">Đời ${genDisplay}</div>
       <div class="node-name">${escapeHTML(m.name)}</div>
       <div class="node-years">${escapeHTML(m.dob || '?')} - ${escapeHTML(m.dod || 'nay')}</div>
+      ${m.occupation ? `<div class="node-occupation">${escapeHTML(m.occupation)}</div>` : ''}
       ${m.spouse ? `<div class="node-spouse">♥ ${escapeHTML(m.spouse)}</div>` : ''}
+      <div class="node-status ${isDeceased ? 'deceased' : 'living'}">
+        <i class="dot ${isDeceased ? 'deceased' : 'living'}"></i>${isDeceased ? 'Đã khuất' : 'Còn sống'}
+      </div>
     `;
     return card;
   }
@@ -567,6 +585,7 @@
     document.getElementById('mDob').value = '';
     document.getElementById('mDod').value = '';
     document.getElementById('mSpouse').value = '';
+    document.getElementById('mOccupation').value = '';
     document.getElementById('mNote').value = '';
     document.getElementById('btnDelete').style.display = 'none';
     
@@ -590,6 +609,7 @@
     const dob = document.getElementById('mDob').value.trim();
     const dod = document.getElementById('mDod').value.trim();
     const spouse = document.getElementById('mSpouse').value.trim();
+    const occupation = document.getElementById('mOccupation').value.trim();
     const note = document.getElementById('mNote').value.trim();
     const pVal = document.getElementById('mParentId').value;
     const parentId = pVal ? parseInt(pVal) : null;
@@ -597,12 +617,12 @@
     if (editingId) {
       let m = members.find(x => x.id === editingId);
       if (m) {
-        Object.assign(m, { name, gender, generation, dob, dod, spouse, note, parentId });
+        Object.assign(m, { name, gender, generation, dob, dod, spouse, occupation, note, parentId });
       }
     } else {
       members.push({
         id: nextId++,
-        name, gender, generation, dob, dod, spouse, note, parentId
+        name, gender, generation, dob, dod, spouse, occupation, note, parentId
       });
     }
     
@@ -636,9 +656,12 @@
     if (!m) return;
 
     document.getElementById('dName').textContent = m.name;
+    const isDeceased = !!(m.dod && String(m.dod).trim());
     document.getElementById('dContent').innerHTML = `
       <p><b>Thế hệ:</b> Đời thứ ${ROMAN[m.generation] || m.generation}</p>
       <p><b>Giới tính:</b> ${m.gender === 'male' ? 'Nam' : 'Nữ'}</p>
+      <p><b>Trạng thái:</b> ${isDeceased ? 'Đã khuất' : 'Còn sống'}</p>
+      <p><b>Nghề nghiệp:</b> ${escapeHTML(m.occupation) || 'Chưa cập nhật'}</p>
       <p><b>Năm sinh - mất:</b> ${escapeHTML(m.dob) || '?'} - ${escapeHTML(m.dod) || 'Còn sống'}</p>
       <p><b>Vợ/Chồng:</b> ${escapeHTML(m.spouse) || 'Chưa cập nhật'}</p>
       <p><b>Ghi chú:</b> ${escapeHTML(m.note) || 'Không có'}</p>
@@ -667,6 +690,7 @@
     document.getElementById('mDob').value = m.dob || '';
     document.getElementById('mDod').value = m.dod || '';
     document.getElementById('mSpouse').value = m.spouse || '';
+    document.getElementById('mOccupation').value = m.occupation || '';
     document.getElementById('mNote').value = m.note || '';
     
     updateParentSelect(m.id);
