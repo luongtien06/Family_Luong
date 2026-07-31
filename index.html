@@ -49,8 +49,8 @@
     border-bottom: 4px solid var(--gold);
     box-shadow: var(--shadow);
   }
-  header h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 5vw, 30px); margin-top: 14px; }
-  header p{ font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-soft); margin-top: 6px; }
+  header h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 5vw, 30px);}
+  header p{ font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-soft); margin-top: 6px;}
 
   .toolbar-wrap{
     position: sticky; top: 0; z-index: 60;
@@ -104,7 +104,7 @@
   .zoom-fit{ display:inline-block; transform-origin: top center; transition: transform .18s ease; text-align:center; }
 
   /* Organization Tree CSS */
-  .tree ul{ padding-top: 26px; position: relative; }
+  .tree ul{ padding-top: 26px; position: relative; width: max-content; }
   .tree > ul{ display:inline-block; padding-top:0; }
   .tree ul::after{ content:''; display:table; clear:both; }
   .tree li{ float:left; text-align:center; list-style:none; position:relative; padding: 26px 10px 0 10px; }
@@ -132,6 +132,15 @@
   .node-card.male::before{ border-bottom-color: var(--indigo); }
   .node-card.female{ border-top: 3px solid var(--rose); }
   .node-card.female::before{ border-bottom-color: var(--rose); }
+  .node-avatar{
+    width:48px; height:48px; border-radius:50%; margin: 0 auto 8px;
+    background-size:cover; background-position:center; background-color: var(--paper-deep);
+    border:2px solid var(--paper-line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; color: var(--ink-soft);
+  }
+  .node-card.male .node-avatar{ border-color: var(--indigo); }
+  .node-card.female .node-avatar{ border-color: var(--rose); }
   .node-eyebrow{ font-family: var(--font-mono); font-size: 10px; color: var(--gold); text-transform: uppercase; }
   .node-name{ font-family: var(--font-display); font-weight: 700; font-size: 15px; }
   .node-years, .node-spouse{ font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
@@ -160,13 +169,24 @@
   .btn-delete{ background:#fff; color:#b3261e; border:1px solid #b3261e; }
 
   .empty-state{ text-align:center; padding: 70px 20px; color: var(--ink-soft); }
+
+  .photo-upload-row{ display:flex; align-items:center; gap:14px; }
+  .photo-preview{
+    width:64px; height:64px; border-radius:50%; flex-shrink:0;
+    background-size:cover; background-position:center; background-color: var(--paper-deep);
+    border:2px solid var(--paper-line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; color: var(--ink-soft);
+  }
+  .photo-upload-actions{ display:flex; flex-direction:column; gap:6px; }
+  .photo-upload-actions .btn{ padding:7px 12px; font-size:12px; }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Gia Phả Điện Tử</h1>
-  <p>Lưu giữ dòng dõi · Kết nối thế hệ</p>
+  <p>Lưu giữ dòng dõi gia đình</p>
 </header>
 
 <div class="toolbar-wrap">
@@ -179,7 +199,7 @@
     </label>
     <button class="btn btn-clear admin-only" onclick="clearAll()"><span class="ic">🗑️</span><span class="label">Xóa hết</span></button>
     
-    <button class="btn btn-login" id="btnLogin" onclick="openLoginModal()"><span class="ic">🔑</span><span class="label">Đăng nhập Admin</span></button>
+    <button class="btn btn-login" id="btnLogin" onclick="openLoginModal()"><span class="ic">🔑</span><span class="label">Đăng nhập</span></button>
     <button class="btn btn-logout admin-only" id="btnLogout" onclick="logout()"><span class="ic">🚪</span><span class="label">Đăng xuất</span></button>
 
     <div class="zoom-group">
@@ -207,25 +227,25 @@
 <div class="modal-overlay" id="loginModal">
   <div class="modal-box">
     <h2>Cấu hình Admin (GitHub Sync)</h2>
-    <p class="modal-note">Nhập Personal Access Token GitHub của bạn để kích hoạt quyền Thêm/Sửa/Xóa và lưu vào file <code>data.json</code>.</p>
+    <p class="modal-note">Nhập Personal Access Token GitHub của bạn để kích hoạt quyền.</p>
     <div class="form-group">
-      <label>GitHub Personal Access Token *</label>
-      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="ghToken" placeholder="ghp_...">
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Tên GitHub Owner</label>
-        <input type="text" id="ghOwner" placeholder="VD: nguyen-van-a">
+        <label>GitHub Owner</label>
+        <input type="text" id="ghOwner" placeholder="...">
       </div>
       <div class="form-group">
-        <label>Tên Repository</label>
-        <input type="text" id="ghRepo" placeholder="VD: Family_Luong">
+        <label>GitHub Repository</label>
+        <input type="text" id="ghRepo" placeholder="...">
       </div>
     </div>
     <p id="loginError" class="error-text"></p>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeLoginModal()">Hủy</button>
-      <button class="btn btn-save" onclick="loginAdmin()">Xác nhận Admin</button>
+      <button class="btn btn-save" onclick="loginAdmin()">Xác nhận</button>
     </div>
   </div>
 </div>
@@ -236,7 +256,20 @@
     <h2 id="modalTitle">Thêm thành viên</h2>
     <div class="form-group">
       <label>Họ và tên *</label>
-      <input type="text" id="mName" placeholder="VD: Nguyễn Văn A">
+      <input type="text" id="mName" placeholder="...">
+    </div>
+    <div class="form-group">
+      <label>Ảnh đại diện</label>
+      <div class="photo-upload-row">
+        <div id="mPhotoPreview" class="photo-preview">👤</div>
+        <div class="photo-upload-actions">
+          <label class="btn btn-import" style="cursor:pointer;">
+            <span class="ic">📷</span><span class="label">Chọn ảnh</span>
+            <input type="file" id="mPhotoInput" accept="image/*" onchange="handlePhotoSelect(this)">
+          </label>
+          <button type="button" class="btn btn-cancel" id="btnRemovePhoto" onclick="removePhoto()" style="display:none;">Xóa ảnh</button>
+        </div>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -254,7 +287,7 @@
     <div class="form-row">
       <div class="form-group">
         <label>Năm sinh</label>
-        <input type="text" id="mDob" placeholder="1950">
+        <input type="text" id="mDob" placeholder="...">
       </div>
       <div class="form-group">
         <label>Năm mất</label>
@@ -263,11 +296,11 @@
     </div>
     <div class="form-group">
       <label>Vợ / Chồng</label>
-      <input type="text" id="mSpouse">
+      <input type="text" id="mSpouse" placeholder="...">
     </div>
     <div class="form-group">
       <label>Nghề nghiệp</label>
-      <input type="text" id="mOccupation" placeholder="VD: Giáo viên, Nông dân, Bộ đội...">
+      <input type="text" id="mOccupation" placeholder="...">
     </div>
     <div class="form-group">
       <label>Ghi chú</label>
@@ -308,6 +341,7 @@
   let detailId = null;
   let zoomLevel = 1;
   let fileSha = null;
+  let currentPhotoData = ''; // ảnh (base64, đã nén) đang chọn trong form thêm/sửa
 
   // Lấy cấu hình Admin từ sessionStorage (tự động đăng xuất khi đóng trình duyệt)
   let ghConfig = JSON.parse(sessionStorage.getItem('ghAdminConfig')) || null;
@@ -369,13 +403,21 @@
     saveData();
   }
 
-  function logout() {
-    ghConfig = null;
-    sessionStorage.removeItem('ghAdminConfig');
-    checkAuthUI();
-    // Tải lại dữ liệu từ file để loại bỏ dữ liệu tạm chưa sync nếu có
-    loadData().then(renderTree);
-  }
+function logout() {
+  ghConfig = null;
+  sessionStorage.removeItem('ghAdminConfig');
+  
+  // 1. Cập nhật lại giao diện ngay lập tức (ẩn nút Admin, hiện nút Login)
+  checkAuthUI(); 
+  
+  // 2. Render lại cây ngay lập tức để ẩn các nút thao tác trên từng thẻ (nếu có)
+  renderTree(); 
+  
+  // 3. Tải lại dữ liệu gốc từ server/GitHub ở chế độ ngầm để xóa dữ liệu tạm chưa sync (nếu có)
+  loadData().then(() => {
+    renderTree();
+  });
+}
 
   // ==========================================
   // ĐỒNG BỘ DỮ LIỆU (DATA SYNC & API)
@@ -464,7 +506,7 @@
           'Accept': 'application/vnd.github.v3+json'
         },
         body: JSON.stringify({
-          message: 'Cập nhật gia phả từ Web Admin',
+          message: 'Cập nhật gia phả từ Admin',
           content: contentBase64,
           sha: fileSha || undefined
         })
@@ -487,7 +529,7 @@
   // ==========================================
   // RENDER CÂY GIA PHẢ (TREE RENDERING)
   // ==========================================
-  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV'];
 
   function renderTree() {
     const root = document.getElementById('treeRoot');
@@ -497,7 +539,7 @@
     const roots = members.filter(m => m.parentId === null || m.parentId === undefined || m.parentId === "");
     
     if (roots.length === 0) {
-      root.innerHTML = `<div class="empty-state"><p>Chưa có dữ liệu gia phả. Hãy bấm "Thêm tổ tiên" để bắt đầu.</p></div>`;
+      root.innerHTML = `<div class="empty-state"><p>Chưa có dữ liệu gia phả. Hãy "Thêm tổ tiên".</p></div>`;
       return;
     }
 
@@ -526,7 +568,11 @@
     
     const genDisplay = ROMAN[m.generation] || m.generation;
     const isDeceased = !!(m.dod && String(m.dod).trim());
+    const avatarHtml = m.photo
+      ? `<div class="node-avatar" style="background-image:url('${m.photo}')"></div>`
+      : `<div class="node-avatar">👤</div>`;
     card.innerHTML = `
+      ${avatarHtml}
       <div class="node-eyebrow">Đời ${genDisplay}</div>
       <div class="node-name">${escapeHTML(m.name)}</div>
       <div class="node-years">${escapeHTML(m.dob || '?')} - ${escapeHTML(m.dod || 'nay')}</div>
@@ -544,6 +590,61 @@
     return String(str).replace(/[&<>"']/g, match => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[match]));
+  }
+
+  // ==========================================
+  // ẢNH ĐẠI DIỆN (CHỌN / NÉN / XÓA)
+  // ==========================================
+  function updatePhotoPreview(dataUrl) {
+    const el = document.getElementById('mPhotoPreview');
+    const removeBtn = document.getElementById('btnRemovePhoto');
+    if (dataUrl) {
+      el.style.backgroundImage = `url(${dataUrl})`;
+      el.textContent = '';
+      removeBtn.style.display = 'inline-flex';
+    } else {
+      el.style.backgroundImage = '';
+      el.textContent = '👤';
+      removeBtn.style.display = 'none';
+    }
+  }
+
+  function handlePhotoSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn một tệp hình ảnh.');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize + nén ảnh để không làm phình to file data.json
+        const MAX_SIZE = 240;
+        let { width, height } = img;
+        if (width > height) {
+          if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
+        } else {
+          if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        currentPhotoData = canvas.toDataURL('image/jpeg', 0.75);
+        updatePhotoPreview(currentPhotoData);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  function removePhoto() {
+    currentPhotoData = '';
+    updatePhotoPreview('');
   }
 
   // ==========================================
@@ -588,6 +689,8 @@
     document.getElementById('mOccupation').value = '';
     document.getElementById('mNote').value = '';
     document.getElementById('btnDelete').style.display = 'none';
+    currentPhotoData = '';
+    updatePhotoPreview('');
     
     updateParentSelect();
     document.getElementById('mParentId').onchange = handleParentChange;
@@ -617,12 +720,12 @@
     if (editingId) {
       let m = members.find(x => x.id === editingId);
       if (m) {
-        Object.assign(m, { name, gender, generation, dob, dod, spouse, occupation, note, parentId });
+        Object.assign(m, { name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData });
       }
     } else {
       members.push({
         id: nextId++,
-        name, gender, generation, dob, dod, spouse, occupation, note, parentId
+        name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData
       });
     }
     
@@ -657,7 +760,11 @@
 
     document.getElementById('dName').textContent = m.name;
     const isDeceased = !!(m.dod && String(m.dod).trim());
+    const photoHtml = m.photo
+      ? `<img src="${m.photo}" alt="${escapeHTML(m.name)}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 14px;border:3px solid var(--paper-line);">`
+      : '';
     document.getElementById('dContent').innerHTML = `
+      ${photoHtml}
       <p><b>Thế hệ:</b> Đời thứ ${ROMAN[m.generation] || m.generation}</p>
       <p><b>Giới tính:</b> ${m.gender === 'male' ? 'Nam' : 'Nữ'}</p>
       <p><b>Trạng thái:</b> ${isDeceased ? 'Đã khuất' : 'Còn sống'}</p>
@@ -692,6 +799,8 @@
     document.getElementById('mSpouse').value = m.spouse || '';
     document.getElementById('mOccupation').value = m.occupation || '';
     document.getElementById('mNote').value = m.note || '';
+    currentPhotoData = m.photo || '';
+    updatePhotoPreview(currentPhotoData);
     
     updateParentSelect(m.id);
     document.getElementById('mParentId').value = m.parentId !== null ? m.parentId : '';
