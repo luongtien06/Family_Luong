@@ -761,7 +761,7 @@ function logout() {
     document.getElementById('dName').textContent = m.name;
     const isDeceased = !!(m.dod && String(m.dod).trim());
     const photoHtml = m.photo
-      ? `<img src="${m.photo}" alt="${escapeHTML(m.name)}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 14px;border:3px solid var(--paper-line);">`
+      ? `<img src="${m.photo}" alt="${escapeHTML(m.name)}" style="width:130px;height:130px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 14px;border:3px solid var(--paper-line);">`
       : '';
     document.getElementById('dContent').innerHTML = `
       ${photoHtml}
