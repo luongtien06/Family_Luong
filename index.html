@@ -119,8 +119,8 @@
 
   .node-card{
     display:inline-block; background:#fffdf8; border: 1px solid var(--paper-line);
-    border-top: none; border-radius: 4px 4px 12px 12px; padding: 20px 18px 14px;
-    min-width: 168px; max-width: 190px; text-align:center; cursor:pointer; position:relative;
+    border-top: none; border-radius: 4px 4px 12px 12px; padding: 20px 16px 14px;
+    min-width: 180px; max-width: 210px; text-align:center; cursor:pointer; position:relative;
     box-shadow: 0 4px 12px rgba(36,29,23,0.10); transition: transform .16s ease;
   }
   .node-card:hover{ transform: translateY(-3px); }
@@ -132,15 +132,26 @@
   .node-card.male::before{ border-bottom-color: var(--indigo); }
   .node-card.female{ border-top: 3px solid var(--rose); }
   .node-card.female::before{ border-bottom-color: var(--rose); }
-  .node-avatar{
-    width:48px; height:48px; border-radius:50%; margin: 0 auto 8px;
-    background-size:cover; background-position:center; background-color: var(--paper-deep);
-    border:2px solid var(--paper-line);
-    display:flex; align-items:center; justify-content:center;
-    font-size:20px; color: var(--ink-soft);
+
+  /* Ảnh đại diện được tăng kích thước */
+  .node-avatars-wrap{
+    display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto 10px;
   }
-  .node-card.male .node-avatar{ border-color: var(--indigo); }
-  .node-card.female .node-avatar{ border-color: var(--rose); }
+  .node-avatar{
+    width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 8px;
+    background-size: cover; background-position: center; background-color: var(--paper-deep);
+    border: 2px solid var(--paper-line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; color: var(--ink-soft); flex-shrink: 0;
+  }
+  .node-avatars-wrap .node-avatar{ margin: 0; }
+  .node-card.male .node-avatar.member-avatar{ border-color: var(--indigo); }
+  .node-card.female .node-avatar.member-avatar{ border-color: var(--rose); }
+  
+  .node-avatar.female-border{ border-color: var(--rose) !important; }
+  .node-avatar.male-border{ border-color: var(--indigo) !important; }
+  .avatar-heart{ font-size: 14px; color: var(--rose); font-weight: bold; }
+
   .node-eyebrow{ font-family: var(--font-mono); font-size: 10px; color: var(--gold); text-transform: uppercase; }
   .node-name{ font-family: var(--font-display); font-weight: 700; font-size: 15px; }
   .node-years, .node-spouse{ font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
@@ -299,6 +310,19 @@
       <input type="text" id="mSpouse" placeholder="...">
     </div>
     <div class="form-group">
+      <label>Ảnh đại diện Vợ / Chồng</label>
+      <div class="photo-upload-row">
+        <div id="mSpousePhotoPreview" class="photo-preview">👤</div>
+        <div class="photo-upload-actions">
+          <label class="btn btn-import" style="cursor:pointer;">
+            <span class="ic">📷</span><span class="label">Chọn ảnh Vợ/Chồng</span>
+            <input type="file" id="mSpousePhotoInput" accept="image/*" onchange="handleSpousePhotoSelect(this)">
+          </label>
+          <button type="button" class="btn btn-cancel" id="btnRemoveSpousePhoto" onclick="removeSpousePhoto()" style="display:none;">Xóa ảnh</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
       <label>Nghề nghiệp</label>
       <input type="text" id="mOccupation" placeholder="...">
     </div>
@@ -342,6 +366,7 @@
   let zoomLevel = 1;
   let fileSha = null;
   let currentPhotoData = ''; // ảnh (base64, đã nén) đang chọn trong form thêm/sửa
+  let currentSpousePhotoData = ''; // ảnh vợ/chồng (base64, đã nén) đang chọn trong form
 
   // Lấy cấu hình Admin từ sessionStorage (tự động đăng xuất khi đóng trình duyệt)
   let ghConfig = JSON.parse(sessionStorage.getItem('ghAdminConfig')) || null;
@@ -531,6 +556,18 @@ function logout() {
   // ==========================================
   const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV'];
 
+  // Tự động căn giữa cây gia phả trong vùng hiển thị
+  function centerTree() {
+    const area = document.querySelector('.tree-area');
+    if (!area) return;
+    setTimeout(() => {
+      const scrollX = (area.scrollWidth - area.clientWidth) / 2;
+      if (scrollX > 0) {
+        area.scrollLeft = scrollX;
+      }
+    }, 50);
+  }
+
   function renderTree() {
     const root = document.getElementById('treeRoot');
     root.innerHTML = '';
@@ -546,6 +583,8 @@ function logout() {
     const ul = document.createElement('ul');
     roots.forEach(r => ul.appendChild(buildNodeLi(r)));
     root.appendChild(ul);
+
+    centerTree();
   }
 
   function buildNodeLi(member) {
@@ -568,11 +607,19 @@ function logout() {
     
     const genDisplay = ROMAN[m.generation] || m.generation;
     const isDeceased = !!(m.dod && String(m.dod).trim());
-    const avatarHtml = m.photo
-      ? `<div class="node-avatar" style="background-image:url('${m.photo}')"></div>`
-      : `<div class="node-avatar">👤</div>`;
+    const memberAvatarHtml = m.photo
+      ? `<div class="node-avatar member-avatar" style="background-image:url('${m.photo}')"></div>`
+      : `<div class="node-avatar member-avatar">👤</div>`;
+    let avatarsHtml = memberAvatarHtml;
+    if (m.spouse) {
+      const spouseBorderClass = m.gender === 'male' ? 'female-border' : 'male-border';
+      const spouseAvatarHtml = m.spousePhoto
+        ? `<div class="node-avatar ${spouseBorderClass}" style="background-image:url('${m.spousePhoto}')"></div>`
+        : `<div class="node-avatar ${spouseBorderClass}">👤</div>`;
+      avatarsHtml = `<div class="node-avatars-wrap">${memberAvatarHtml}<span class="avatar-heart">♥</span>${spouseAvatarHtml}</div>`;
+    }
     card.innerHTML = `
-      ${avatarHtml}
+      ${avatarsHtml}
       <div class="node-eyebrow">Đời ${genDisplay}</div>
       <div class="node-name">${escapeHTML(m.name)}</div>
       <div class="node-years">${escapeHTML(m.dob || '?')} - ${escapeHTML(m.dod || 'nay')}</div>
@@ -647,6 +694,64 @@ function logout() {
     updatePhotoPreview('');
   }
 
+  // Nén 1 file ảnh về dataURL nhỏ gọn (dùng chung cho ảnh chính và ảnh vợ/chồng)
+  function resizeImageFile(file, onDone) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_SIZE = 240;
+        let { width, height } = img;
+        if (width > height) {
+          if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
+        } else {
+          if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        onDone(canvas.toDataURL('image/jpeg', 0.75));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function updateSpousePhotoPreview(dataUrl) {
+    const el = document.getElementById('mSpousePhotoPreview');
+    const removeBtn = document.getElementById('btnRemoveSpousePhoto');
+    if (dataUrl) {
+      el.style.backgroundImage = `url(${dataUrl})`;
+      el.textContent = '';
+      removeBtn.style.display = 'inline-flex';
+    } else {
+      el.style.backgroundImage = '';
+      el.textContent = '👤';
+      removeBtn.style.display = 'none';
+    }
+  }
+
+  function handleSpousePhotoSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn một tệp hình ảnh.');
+      input.value = '';
+      return;
+    }
+    resizeImageFile(file, (dataUrl) => {
+      currentSpousePhotoData = dataUrl;
+      updateSpousePhotoPreview(currentSpousePhotoData);
+    });
+    input.value = '';
+  }
+
+  function removeSpousePhoto() {
+    currentSpousePhotoData = '';
+    updateSpousePhotoPreview('');
+  }
+
   // ==========================================
   // THAO TÁC THÊM / SỬA / XÓA THÀNH VIÊN
   // ==========================================
@@ -691,6 +796,8 @@ function logout() {
     document.getElementById('btnDelete').style.display = 'none';
     currentPhotoData = '';
     updatePhotoPreview('');
+    currentSpousePhotoData = '';
+    updateSpousePhotoPreview('');
     
     updateParentSelect();
     document.getElementById('mParentId').onchange = handleParentChange;
@@ -720,12 +827,12 @@ function logout() {
     if (editingId) {
       let m = members.find(x => x.id === editingId);
       if (m) {
-        Object.assign(m, { name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData });
+        Object.assign(m, { name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData, spousePhoto: currentSpousePhotoData });
       }
     } else {
       members.push({
         id: nextId++,
-        name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData
+        name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData, spousePhoto: currentSpousePhotoData
       });
     }
     
@@ -760,11 +867,14 @@ function logout() {
 
     document.getElementById('dName').textContent = m.name;
     const isDeceased = !!(m.dod && String(m.dod).trim());
-    const photoHtml = m.photo
-      ? `<img src="${m.photo}" alt="${escapeHTML(m.name)}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 14px;border:3px solid var(--paper-line);">`
-      : '';
+    const coupleHtml = (m.photo || (m.spouse && m.spousePhoto)) ? `
+      <div style="display:flex;justify-content:center;align-items:center;gap:14px;margin-bottom:14px;">
+        ${m.photo ? `<img src="${m.photo}" alt="${escapeHTML(m.name)}" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--paper-line);">` : ''}
+        ${m.spouse && m.spousePhoto ? `<img src="${m.spousePhoto}" alt="${escapeHTML(m.spouse)}" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--paper-line);">` : ''}
+      </div>
+    ` : '';
     document.getElementById('dContent').innerHTML = `
-      ${photoHtml}
+      ${coupleHtml}
       <p><b>Thế hệ:</b> Đời thứ ${ROMAN[m.generation] || m.generation}</p>
       <p><b>Giới tính:</b> ${m.gender === 'male' ? 'Nam' : 'Nữ'}</p>
       <p><b>Trạng thái:</b> ${isDeceased ? 'Đã khuất' : 'Còn sống'}</p>
@@ -801,6 +911,8 @@ function logout() {
     document.getElementById('mNote').value = m.note || '';
     currentPhotoData = m.photo || '';
     updatePhotoPreview(currentPhotoData);
+    currentSpousePhotoData = m.spousePhoto || '';
+    updateSpousePhotoPreview(currentSpousePhotoData);
     
     updateParentSelect(m.id);
     document.getElementById('mParentId').value = m.parentId !== null ? m.parentId : '';
@@ -873,6 +985,7 @@ function logout() {
     zoomLevel = Math.max(0.3, Math.min(2.0, zoomLevel + d)); // Giới hạn phóng to/thu nhỏ
     document.getElementById('zoomFit').style.transform = `scale(${zoomLevel})`; 
     document.getElementById('zoomLabel').textContent = `${Math.round(zoomLevel * 100)}%`;
+    centerTree();
   }
 
   // Lắng nghe sự kiện phím Esc để đóng các modal
