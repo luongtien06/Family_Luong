@@ -130,10 +130,12 @@
       "generation": 3,
       "dob": "",
       "dod": "",
-      "spouse": "Hiệp (vợ cũ)",
+      "spouse": "Hoàng Thị Hiệp (vợ cũ)",
       "occupation": "Sửa xe",
       "note": "Con thứ 3",
-      "parentId": 2
+      "parentId": 2,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 11,
