@@ -238,7 +238,7 @@
     },
     {
       "id": 20,
-      "name": "Lường ... Sặng",
+      "name": "Lường Thị Sặng",
       "gender": "female",
       "generation": 2,
       "dob": "",
@@ -246,7 +246,9 @@
       "spouse": "",
       "occupation": "",
       "note": "",
-      "parentId": 7
+      "parentId": 7,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 21,
