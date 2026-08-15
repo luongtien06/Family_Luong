@@ -469,7 +469,21 @@
       "parentId": 27,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 37,
+      "name": "Lường Thị Hoàn",
+      "gender": "female",
+      "generation": 4,
+      "dob": "",
+      "dod": "",
+      "spouse": "",
+      "occupation": "",
+      "note": "Con thứ 4",
+      "parentId": 27,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 37
+  "nextId": 38
 }
