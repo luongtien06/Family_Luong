@@ -365,7 +365,21 @@
       "parentId": 25,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 30,
+      "name": "Lường Thị Khoái",
+      "gender": "female",
+      "generation": 2,
+      "dob": "",
+      "dod": "",
+      "spouse": "",
+      "occupation": "",
+      "note": "",
+      "parentId": 25,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 30
+  "nextId": 31
 }
