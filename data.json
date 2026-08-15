@@ -323,7 +323,21 @@
       "parentId": 25,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 27,
+      "name": "Lường Văn Tạ",
+      "gender": "male",
+      "generation": 3,
+      "dob": "",
+      "dod": "20/3",
+      "spouse": "Lường Thị Hảo, Hoàng Thị Mưu (mất 14/2, 27/2)",
+      "occupation": "Tự do",
+      "note": "",
+      "parentId": 26,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 27
+  "nextId": 28
 }
