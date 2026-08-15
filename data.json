@@ -513,7 +513,21 @@
       "parentId": 27,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 39,
+      "name": "Lường Gia Huy",
+      "gender": "male",
+      "generation": 4,
+      "dob": "",
+      "dod": "",
+      "spouse": "",
+      "occupation": "",
+      "note": "Con cả",
+      "parentId": 22,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 39
+  "nextId": 40
 }
