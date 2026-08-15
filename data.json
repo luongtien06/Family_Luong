@@ -252,7 +252,7 @@
     },
     {
       "id": 21,
-      "name": "Lường ... Tâm",
+      "name": "Lường Thị Tâm",
       "gender": "female",
       "generation": 2,
       "dob": "",
@@ -260,7 +260,9 @@
       "spouse": "",
       "occupation": "",
       "note": "",
-      "parentId": 7
+      "parentId": 7,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 22,
