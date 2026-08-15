@@ -393,7 +393,21 @@
       "parentId": 25,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 32,
+      "name": "Lường Thị Yến",
+      "gender": "female",
+      "generation": 3,
+      "dob": "",
+      "dod": "",
+      "spouse": "",
+      "occupation": "",
+      "note": "Con cả",
+      "parentId": 26,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 32
+  "nextId": 33
 }
