@@ -280,7 +280,7 @@
     },
     {
       "id": 22,
-      "name": "Lường Hữu Thạch",
+      "name": "Lường Văn Thạch",
       "gender": "male",
       "generation": 3,
       "dob": "",
@@ -288,7 +288,9 @@
       "spouse": "",
       "occupation": "",
       "note": "Con cả",
-      "parentId": 6
+      "parentId": 6,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 23,
