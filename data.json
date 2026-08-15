@@ -93,7 +93,7 @@
     },
     {
       "id": 8,
-      "name": "Lường Hữu Lịch",
+      "name": "Lường Thị Lịch",
       "gender": "female",
       "generation": 2,
       "dob": "",
@@ -101,7 +101,9 @@
       "spouse": "",
       "occupation": "Tự do",
       "note": "Con thứ 3",
-      "parentId": 1
+      "parentId": 1,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 9,
