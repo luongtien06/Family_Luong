@@ -455,7 +455,21 @@
       "parentId": 26,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 36,
+      "name": "Lường Thị Hậu",
+      "gender": "female",
+      "generation": 4,
+      "dob": "",
+      "dod": "1980",
+      "spouse": "",
+      "occupation": "",
+      "note": "Con cả",
+      "parentId": 27,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 36
+  "nextId": 37
 }
