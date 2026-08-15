@@ -295,7 +295,21 @@
       "occupation": "",
       "note": "Con thứ 3",
       "parentId": 6
+    },
+    {
+      "id": 25,
+      "name": "Lường ... Thành",
+      "gender": "male",
+      "generation": 1,
+      "dob": "",
+      "dod": "",
+      "spouse": "",
+      "occupation": "",
+      "note": "",
+      "parentId": null,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 25
+  "nextId": 26
 }
