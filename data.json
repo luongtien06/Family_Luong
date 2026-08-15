@@ -81,13 +81,15 @@
       "id": 7,
       "name": "Lường Hữu Hách",
       "gender": "male",
-      "generation": 1,
+      "generation": 4,
       "dob": "",
-      "dod": "1980",
+      "dod": "6/3",
       "spouse": "Tâm",
       "occupation": "Tự do",
       "note": "",
-      "parentId": null
+      "parentId": 27,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 8,
