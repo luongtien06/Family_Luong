@@ -144,10 +144,12 @@
       "generation": 3,
       "dob": "",
       "dod": "",
-      "spouse": "Hà (vợ cũ)",
+      "spouse": "Nguyễn Thị Hà (vợ cũ)",
       "occupation": "Tự do",
       "note": "Con thứ 4",
-      "parentId": 2
+      "parentId": 2,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 12,
