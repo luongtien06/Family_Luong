@@ -309,7 +309,21 @@
       "parentId": null,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 26,
+      "name": "Lường Văn Bằng",
+      "gender": "male",
+      "generation": 2,
+      "dob": "",
+      "dod": "10/12",
+      "spouse": "Phan Thị Đụn, Hoàng Thị Vịnh",
+      "occupation": "Tự do",
+      "note": "Con cả",
+      "parentId": 25,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 26
+  "nextId": 27
 }
