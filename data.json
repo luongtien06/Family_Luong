@@ -337,7 +337,21 @@
       "parentId": 26,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 28,
+      "name": "Lường Văn Biền",
+      "gender": "male",
+      "generation": 2,
+      "dob": "",
+      "dod": "",
+      "spouse": "Lợi",
+      "occupation": "",
+      "note": "Con thứ 2",
+      "parentId": 25,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 28
+  "nextId": 29
 }
