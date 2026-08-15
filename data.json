@@ -407,7 +407,21 @@
       "parentId": 26,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 33,
+      "name": "Lường Thị Cân",
+      "gender": "female",
+      "generation": 3,
+      "dob": "",
+      "dod": "",
+      "spouse": "",
+      "occupation": "",
+      "note": "",
+      "parentId": 26,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 33
+  "nextId": 34
 }
