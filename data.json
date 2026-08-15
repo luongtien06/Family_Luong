@@ -379,7 +379,21 @@
       "parentId": 25,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 31,
+      "name": "Cô 5",
+      "gender": "male",
+      "generation": 2,
+      "dob": "",
+      "dod": "",
+      "spouse": "",
+      "occupation": "",
+      "note": "Con thứ 5",
+      "parentId": 25,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 31
+  "nextId": 32
 }
