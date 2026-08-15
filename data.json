@@ -421,7 +421,21 @@
       "parentId": 26,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 34,
+      "name": "Lường Thị Giang",
+      "gender": "female",
+      "generation": 3,
+      "dob": "",
+      "dod": "",
+      "spouse": "",
+      "occupation": "",
+      "note": "Con thứ 4",
+      "parentId": 26,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 34
+  "nextId": 35
 }
