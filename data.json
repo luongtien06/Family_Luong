@@ -311,10 +311,12 @@
       "generation": 3,
       "dob": "",
       "dod": "",
-      "spouse": "",
+      "spouse": "Hùng",
       "occupation": "",
       "note": "Con thứ 3",
-      "parentId": 6
+      "parentId": 6,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 25,
