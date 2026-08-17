@@ -74,13 +74,15 @@
       "id": 6,
       "name": "Lường Hữu Lai",
       "gender": "male",
-      "generation": 2,
+      "generation": 5,
       "dob": "",
       "dod": "",
       "spouse": "Hoàng Thị Nhung",
       "occupation": "Tự do",
       "note": "Con thứ 2",
-      "parentId": 1
+      "parentId": 1,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 7,
