@@ -233,13 +233,15 @@
       "id": 18,
       "name": "Lường Gia Bảo",
       "gender": "male",
-      "generation": 4,
+      "generation": 7,
       "dob": "2006",
       "dod": "",
       "spouse": "",
       "occupation": "",
       "note": "Con cả",
-      "parentId": 11
+      "parentId": 11,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 19,
