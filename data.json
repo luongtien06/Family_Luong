@@ -299,13 +299,15 @@
       "id": 23,
       "name": "Lường Hữu Tuyên",
       "gender": "male",
-      "generation": 3,
+      "generation": 6,
       "dob": "",
       "dod": "",
       "spouse": "",
       "occupation": "",
       "note": "Con thứ 2",
-      "parentId": 6
+      "parentId": 6,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 24,
