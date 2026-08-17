@@ -247,13 +247,15 @@
       "id": 19,
       "name": "Lường Bảo Yến Nhi",
       "gender": "male",
-      "generation": 4,
+      "generation": 7,
       "dob": "21/3/2014",
       "dod": "",
       "spouse": "",
       "occupation": "",
       "note": "Con thứ 2",
-      "parentId": 11
+      "parentId": 11,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 20,
