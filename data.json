@@ -200,13 +200,15 @@
       "id": 15,
       "name": "Lường Thị Hoàng Anh",
       "gender": "female",
-      "generation": 4,
+      "generation": 7,
       "dob": "",
       "dod": "",
       "spouse": "Thành",
       "occupation": "Tự do",
       "note": "Con thứ 2",
-      "parentId": 5
+      "parentId": 5,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 16,
