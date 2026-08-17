@@ -186,13 +186,15 @@
       "id": 14,
       "name": "Lường Thị Quỳnh Anh",
       "gender": "female",
-      "generation": 4,
+      "generation": 7,
       "dob": "",
       "dod": "",
       "spouse": "Vượng",
       "occupation": "Giáo viên",
       "note": "Con cả",
-      "parentId": 5
+      "parentId": 5,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 15,
