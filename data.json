@@ -221,13 +221,15 @@
       "id": 17,
       "name": "Lường Thị Phương Vy",
       "gender": "female",
-      "generation": 4,
+      "generation": 7,
       "dob": "",
       "dod": "",
       "spouse": "",
       "occupation": "",
       "note": "Con thứ 2",
-      "parentId": 10
+      "parentId": 10,
+      "photo": "",
+      "spousePhoto": ""
     },
     {
       "id": 18,
