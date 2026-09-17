@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Gia Phả Điện Tử</title>
+<title>Gia Phả Họ LƯỜNG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,500;0,600;0,700;1,500&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="https://tse1.mm.bing.net/th/id/OIP.vuok9DjN2hsg1LX87ecG_AHaFL?r=0&rs=1&pid=ImgDetMain&o=7&rm=3">
 <style>
   /* ============ DESIGN TOKENS ============ */
   :root{
@@ -453,6 +454,9 @@
   let fileSha = null;
   let currentPhotoData = ''; // ảnh (base64, đã nén) đang chọn trong form thêm/sửa
   let currentSpousePhotoData = ''; // ảnh vợ/chồng (base64, đã nén) đang chọn trong form
+  let centerTreeFrame = null;
+  let fitTreeFrame = null;
+  let resizeFrame = null;
 
   // Lấy cấu hình Admin từ sessionStorage (tự động đăng xuất khi đóng trình duyệt)
   let ghConfig = JSON.parse(sessionStorage.getItem('ghAdminConfig')) || null;
@@ -646,12 +650,23 @@ function logout() {
   function centerTree() {
     const area = document.querySelector('.tree-area');
     if (!area) return;
-    setTimeout(() => {
+
+    if (centerTreeFrame) cancelAnimationFrame(centerTreeFrame);
+    centerTreeFrame = requestAnimationFrame(() => {
       const scrollX = (area.scrollWidth - area.clientWidth) / 2;
       if (scrollX > 0) {
         area.scrollLeft = scrollX;
       }
-    }, 50);
+      centerTreeFrame = null;
+    });
+  }
+
+  function scheduleFitTree() {
+    if (fitTreeFrame) cancelAnimationFrame(fitTreeFrame);
+    fitTreeFrame = requestAnimationFrame(() => {
+      fitTree();
+      fitTreeFrame = null;
+    });
   }
 
   function renderTree() {
@@ -670,7 +685,7 @@ function logout() {
     roots.forEach(r => ul.appendChild(buildNodeLi(r)));
     root.appendChild(ul);
 
-    fitTree();
+    scheduleFitTree();
   }
 
   function buildNodeLi(member) {
@@ -1082,11 +1097,13 @@ function logout() {
     const treeEl = document.getElementById('treeRoot');
     if (!area || !zoomFitEl || !treeEl) return;
 
-    // Đo bề rộng thật của cây (bỏ scale hiện tại để đo chính xác)
     const prevTransform = zoomFitEl.style.transform;
+    const prevDisplay = zoomFitEl.style.display;
     zoomFitEl.style.transform = 'none';
+    zoomFitEl.style.display = 'inline-block';
     const naturalWidth = treeEl.scrollWidth;
     zoomFitEl.style.transform = prevTransform;
+    zoomFitEl.style.display = prevDisplay;
 
     const available = area.clientWidth - 24;
     let scale = 1;
@@ -1101,10 +1118,12 @@ function logout() {
   }
 
   // Tự động tính lại khi xoay màn hình hoặc thay đổi kích thước cửa sổ
-  let fitResizeTimer;
   window.addEventListener('resize', () => {
-    clearTimeout(fitResizeTimer);
-    fitResizeTimer = setTimeout(fitTree, 200);
+    if (resizeFrame) cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => {
+      scheduleFitTree();
+      resizeFrame = null;
+    });
   });
 
   // Lắng nghe sự kiện phím Esc để đóng các modal
