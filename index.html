@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes, viewport-fit=cover">
 <title>Gia Phả Họ LƯỜNG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,7 +34,6 @@
   *{ margin:0; padding:0; box-sizing:border-box; }
   html{ -webkit-tap-highlight-color: transparent; height:100%; }
 
-  /* Bố cục cố định theo khung nhìn: tiêu đề + thanh công cụ + vùng cây (tự cuộn) */
   body{
     font-family: var(--font-body);
     background: var(--paper);
@@ -44,6 +43,7 @@
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
+    overscroll-behavior: none;
   }
 
   header{
@@ -51,12 +51,12 @@
     background: linear-gradient(180deg, var(--lacquer) 0%, var(--lacquer-deep) 100%);
     color: var(--gold-tint);
     text-align: center;
-    padding: 26px 16px 22px;
-    padding-top: max(26px, calc(env(safe-area-inset-top) + 12px));
+    padding: 16px 16px 14px;
+    padding-top: max(16px, calc(env(safe-area-inset-top) + 8px));
     border-bottom: 4px solid var(--gold);
     box-shadow: var(--shadow);
   }
-  header h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(20px, 5vw, 30px);}
+  header h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(18px, 4.2vw, 28px); }
 
   .toolbar-wrap{
     position: relative; flex-shrink:0; z-index: 60;
@@ -66,16 +66,18 @@
   }
   .controls{
     display:flex; gap:8px; justify-content:center; align-items:center;
-    flex-wrap: wrap; padding: 10px 12px; max-width: 1100px; margin: 0 auto;
+    flex-wrap: wrap; padding: 8px 12px; max-width: 1200px; margin: 0 auto;
   }
   .btn{
-    display:inline-flex; align-items:center; gap:6px;
-    padding: 9px 14px; border:1px solid transparent;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding: 8px 14px; border:1px solid transparent; min-height: 38px;
     border-radius: 999px; cursor:pointer;
     font-family: var(--font-body); font-size: 13px; font-weight: 600;
     white-space: nowrap; background: #fff; color: var(--ink);
+    transition: transform .12s ease, background-color .15s ease, border-color .15s ease;
+    user-select: none; -webkit-tap-highlight-color: transparent;
   }
-  .btn:active{ transform: scale(0.96); }
+  .btn:active{ transform: scale(0.95); }
   .btn:focus-visible, .zoom-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
   .btn .ic{ font-size: 15px; line-height:1; }
   .btn-add{ background: var(--lacquer); color:#fff; }
@@ -85,19 +87,188 @@
   .btn-fit{ background:#fff; color: var(--indigo); border-color: var(--indigo); }
   .btn-login{ background: var(--ink); color:#fff; }
   .btn-logout{ background:#7a2020; color:#fff; }
+  .btn-branch-toggle{ background:#fff; color: var(--gold); border-color: var(--gold); }
+  .btn-branch-toggle:hover{ background: var(--gold-tint); }
+  .btn-focus{ background: var(--gold); color:#fff; }
+  .btn-focus:hover{ background: #8f6a1a; }
+  .btn-menu{ background: #fff; color: var(--ink); border-color: var(--paper-line); }
 
   .admin-only { display: none !important; }
+  .mobile-only { display: none !important; }
 
-  .sync-status{ text-align:center; font-family: var(--font-mono); font-size: 11px; padding: 0 12px 8px; min-height: 14px; color: var(--ink-soft); }
+  /* ============ SEARCH ============ */
+  .search-box-wrap{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .search-input-inner{
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--paper-line);
+    border-radius: 999px;
+    padding: 4px 10px;
+    min-height: 38px;
+    gap: 6px;
+    transition: all .2s ease;
+  }
+  .search-input-inner:focus-within{
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px rgba(171,130,38,0.22);
+  }
+  .search-icon{ font-size: 14px; color: var(--ink-soft); line-height: 1; }
+  .search-input-inner input,
+  .search-input{
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink);
+    width: 145px;
+    transition: width .2s ease;
+  }
+  .search-input:focus{ width: 175px; }
+  .search-clear-btn{
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 2px 4px;
+    line-height: 1;
+    min-width: 20px;
+    min-height: 20px;
+  }
+  .search-clear-btn:hover{ color: var(--lacquer); }
+  .search-dropdown{
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 290px;
+    background: #fffdf8;
+    border: 1px solid var(--paper-line);
+    border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(36,29,23,0.18);
+    max-height: 320px;
+    overflow-y: auto;
+    z-index: 120;
+    text-align: left;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .search-item{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3ece0;
+    transition: background .15s ease;
+  }
+  .search-item:last-child{ border-bottom: none; }
+  .search-item:hover, .search-item.active{ background: var(--gold-tint); }
+  .search-item-avatar{
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--paper-deep);
+    border: 1.5px solid var(--paper-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+  .search-item-avatar.male-border{ border-color: var(--indigo); }
+  .search-item-avatar.female-border{ border-color: var(--rose); }
+  .search-item-info{ flex: 1; min-width: 0; }
+  .search-item-name{
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .search-item-sub{
+    font-size: 11px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .search-empty{
+    padding: 14px 12px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  /* ============ FOCUS BANNER ============ */
+  .focus-banner{
+    display: none;
+    background: linear-gradient(90deg, var(--gold-tint) 0%, #fffbf0 100%);
+    border-bottom: 2px solid var(--gold);
+    padding: 8px 14px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(171,130,38,0.12);
+  }
+  .focus-banner-text{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink);
+    flex-wrap: wrap;
+  }
+  .focus-badge{
+    background: var(--lacquer);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .btn-focus-exit{
+    background: #fff;
+    border: 1px solid var(--gold);
+    color: var(--ink);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 34px;
+    transition: all .16s ease;
+  }
+  .btn-focus-exit:hover{
+    background: var(--gold);
+    color: #fff;
+  }
+
+  .sync-status{ text-align:center; font-family: var(--font-mono); font-size: 11px; padding: 0 12px 6px; min-height: 14px; color: var(--ink-soft); }
   .sync-status.syncing{ color: var(--gold); }
   .sync-status.ok{ color:#2e7d32; }
   .sync-status.error{ color:#b3261e; }
 
   .zoom-group{ display:flex; align-items:center; gap:2px; background:#fff; border:1px solid var(--paper-line); border-radius: 999px; padding: 3px; }
-  .zoom-btn{ width:30px; height:30px; border:none; border-radius:50%; background:transparent; font-size:16px; font-weight:700; cursor:pointer; }
-  .zoom-label{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); width: 42px; text-align:center; }
+  .zoom-btn{ width:32px; height:32px; border:none; border-radius:50%; background:transparent; font-size:16px; font-weight:700; cursor:pointer; }
+  .zoom-label{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); width: 44px; text-align:center; }
 
-  .legend{ display:flex; gap:16px; justify-content:center; flex-wrap:wrap; padding: 4px 12px 8px; font-size: 12px; color: var(--ink-soft); }
+  .legend{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; padding: 3px 12px 6px; font-size: 12px; color: var(--ink-soft); }
   .legend span{ display:inline-flex; align-items:center; gap:5px; }
   .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
   .dot.male{ background: var(--indigo); }
@@ -105,81 +276,329 @@
   .dot.living{ background: var(--gold); }
   .dot.deceased{ background: var(--ink-soft); }
 
-  /* Vùng cây: tự cuộn, kéo bằng chuột, cuộn bằng ngón tay */
+  /* ============ VÙNG CÂY (TREE AREA) ============ */
   .tree-area{
     flex: 1 1 auto; min-height: 0;
-    padding: 34px 16px 70px; overflow: auto; text-align:center;
+    padding: 24px 16px 80px; overflow: auto; text-align:center;
     -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
     cursor: grab; user-select: none; -webkit-user-select: none;
+    touch-action: pan-x pan-y;
   }
   .tree-area.dragging{ cursor: grabbing; }
   .tree-area.dragging .node-card{ pointer-events: none; }
-  /* Thu phóng bằng CSS zoom để vùng cuộn luôn khớp kích thước thật */
-  .zoom-fit{ display:inline-block; text-align:center; }
+  .zoom-fit{ display:inline-block; text-align:center; min-width: 100%; }
 
-  /* Organization Tree CSS */
-  .tree ul{ padding-top: 26px; position: relative; width: max-content; }
-  .tree > ul{ display:inline-block; padding-top:0; }
-  .tree ul::after{ content:''; display:table; clear:both; }
-  .tree li{ float:left; text-align:center; list-style:none; position:relative; padding: 26px 10px 0 10px; }
-  .tree li::before, .tree li::after{ content:''; position:absolute; top:0; right:50%; border-top: 2px solid var(--line); width:50%; height:26px; }
-  .tree li::after{ right:auto; left:50%; border-left: 2px solid var(--line); }
-  .tree li:only-child::after, .tree li:only-child::before{ display:none; }
-  .tree li:only-child{ padding-top:0; }
-  .tree li:first-child::before, .tree li:last-child::after{ border:0 none; }
-  .tree li:last-child::before{ border-right: 2px solid var(--line); border-radius: 0 6px 0 0; }
-  .tree li:first-child::after{ border-radius: 6px 0 0 0; }
-  .tree ul ul::before{ content:''; position:absolute; top:0; left:50%; border-left: 2px solid var(--line); width:0; height:26px; }
-
-  .node-card{
-    display:inline-block; background:#fffdf8; border: 1px solid var(--paper-line);
-    border-top: none; border-radius: 4px 4px 12px 12px;
-    padding: clamp(12px,3.2vw,20px) clamp(10px,3vw,16px) clamp(8px,2vw,14px);
-    min-width: clamp(126px, 34vw, 180px); max-width: clamp(148px, 40vw, 210px);
-    text-align:center; cursor:pointer; position:relative;
-    box-shadow: 0 4px 12px rgba(36,29,23,0.10); transition: transform .16s ease;
+  /* ============ MODERN FLEXBOX TREE LAYOUT ============ */
+  .tree{
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 20px 60px;
+    min-width: 100%;
   }
-  .node-card:hover{ transform: translateY(-3px); }
+  .tree-roots{
+    display: inline-flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 32px;
+  }
+  .tree-branch{
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+  .tree-node-wrap{
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Đường nối dọc từ thẻ cha xuống thanh ngang các con */
+  .tree-branch.has-children > .tree-node-wrap::after{
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 0;
+    height: 20px;
+    border-left: 2px solid var(--line);
+    transform: translateX(-50%);
+    z-index: 1;
+  }
+  .tree-branch.is-collapsed.has-children > .tree-node-wrap::after{
+    display: none;
+  }
+
+  /* Vùng chứa các nhánh con */
+  .tree-children{
+    display: inline-flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+    padding-top: 20px;
+    margin-top: 20px;
+  }
+
+  /* Đường nối ngang trên đỉnh các con */
+  .tree-children > .tree-branch::before,
+  .tree-children > .tree-branch::after{
+    content: '';
+    position: absolute;
+    top: -20px;
+    width: 50%;
+    height: 20px;
+    border-top: 2px solid var(--line);
+  }
+  .tree-children > .tree-branch::before{
+    right: 50%;
+  }
+  .tree-children > .tree-branch::after{
+    left: 50%;
+    border-left: 2px solid var(--line);
+  }
+
+  /* Nhánh con đầu tiên */
+  .tree-children > .tree-branch:first-child::before{
+    border-top: none;
+  }
+  .tree-children > .tree-branch:first-child::after{
+    border-top-left-radius: 6px;
+  }
+
+  /* Nhánh con cuối cùng */
+  .tree-children > .tree-branch:last-child::after{
+    border-top: none;
+  }
+  .tree-children > .tree-branch:last-child::before{
+    border-right: 2px solid var(--line);
+    border-top-right-radius: 6px;
+  }
+
+  /* Con một (chỉ có 1 con) */
+  .tree-children > .tree-branch:only-child::before,
+  .tree-children > .tree-branch:only-child::after{
+    display: none;
+  }
+  .tree-children > .tree-branch:only-child > .tree-node-wrap::before{
+    content: '';
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    width: 0;
+    height: 40px;
+    border-left: 2px solid var(--line);
+    transform: translateX(-50%);
+  }
+
+  /* Nút thu gọn / mở rộng trên từng nhánh */
+  .branch-toggle-btn{
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    background: #fffdf8;
+    border: 1.5px solid var(--line);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(36,29,23,0.14);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+    transition: all .16s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Mở rộng vùng bấm cảm ứng để không chạm trượt */
+  .branch-toggle-btn::after{
+    content:'';
+    position:absolute;
+    top:-10px; bottom:-10px;
+    left:-10px; right:-10px;
+  }
+  .branch-toggle-btn:hover{
+    background: var(--gold-tint);
+    border-color: var(--gold);
+    transform: translateX(-50%) scale(1.06);
+  }
+  .branch-toggle-btn.collapsed{
+    background: var(--gold-tint);
+    border-color: var(--gold);
+    color: #7a5c14;
+    padding: 3px 10px;
+  }
+  .branch-toggle-btn .toggle-icon{
+    font-size: 11px;
+    line-height: 1;
+  }
+  .branch-toggle-btn .toggle-count{
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+
+  /* ============ THẺ THÀNH VIÊN (NODE CARD) ============ */
+  .node-card{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fffdf8;
+    border: 1px solid var(--paper-line);
+    border-top: none;
+    border-radius: 4px 4px 12px 12px;
+    padding: 14px 10px 12px;
+    width: clamp(146px, 35vw, 180px);
+    min-height: 172px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(36,29,23,0.10);
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .node-card:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(36,29,23,0.16);
+  }
   .node-card::before{
-    content:''; position:absolute; top:-9px; left:50%; transform: translateX(-50%);
-    border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 9px solid var(--gold);
+    content:'';
+    position:absolute;
+    top:-9px;
+    left:50%;
+    transform: translateX(-50%);
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-bottom: 9px solid var(--gold);
   }
   .node-card.male{ border-top: 3px solid var(--indigo); }
   .node-card.male::before{ border-bottom-color: var(--indigo); }
   .node-card.female{ border-top: 3px solid var(--rose); }
   .node-card.female::before{ border-bottom-color: var(--rose); }
 
+  .node-card.is-focus-root{
+    border: 2px solid var(--gold) !important;
+    box-shadow: 0 0 18px rgba(171,130,38,0.45) !important;
+  }
+  .focus-tag{
+    display: inline-block;
+    background: var(--gold);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  @keyframes highlightPulse{
+    0%{ box-shadow: 0 0 0 0 rgba(171,130,38, 0.9); transform: scale(1); }
+    50%{ box-shadow: 0 0 0 16px rgba(171,130,38, 0); transform: scale(1.05); }
+    100%{ box-shadow: 0 0 0 0 rgba(171,130,38, 0); transform: scale(1); }
+  }
+  .highlight-pulse{
+    animation: highlightPulse 1.2s ease-in-out 2;
+    border-color: var(--gold) !important;
+    z-index: 25 !important;
+  }
+  .card-search-highlight{
+    outline: 3px solid var(--gold) !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 4px rgba(171,130,38,0.25), 0 8px 24px rgba(171,130,38,0.4) !important;
+    z-index: 20 !important;
+  }
+  .search-item-badge{
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gold);
+    background: var(--gold-tint);
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
   .node-avatars-wrap{
-    display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto 8px;
   }
   .node-avatar{
-    width: clamp(40px, 11vw, 64px); height: clamp(40px, 11vw, 64px); border-radius: 50%; margin: 0 auto 8px;
+    width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 6px;
     background-size: cover; background-position: center; background-color: var(--paper-deep);
     border: 2px solid var(--paper-line);
     display: flex; align-items: center; justify-content: center;
-    font-size: clamp(16px, 4.2vw, 26px); color: var(--ink-soft); flex-shrink: 0;
+    font-size: 22px; color: var(--ink-soft); flex-shrink: 0;
   }
-  .node-avatars-wrap .node-avatar{ margin: 0; }
+  .node-avatars-wrap .node-avatar{
+    width: 44px; height: 44px; font-size: 18px; margin: 0;
+  }
   .node-card.male .node-avatar.member-avatar{ border-color: var(--indigo); }
   .node-card.female .node-avatar.member-avatar{ border-color: var(--rose); }
   .node-avatar.female-border{ border-color: var(--rose) !important; }
   .node-avatar.male-border{ border-color: var(--indigo) !important; }
-  .avatar-heart{ font-size: 14px; color: var(--rose); font-weight: bold; }
+  .avatar-heart{ font-size: 13px; color: var(--rose); font-weight: bold; }
 
   .node-eyebrow{ font-family: var(--font-mono); font-size: 10px; color: var(--gold); text-transform: uppercase; }
-  .node-name{ font-family: var(--font-display); font-weight: 700; font-size: clamp(12.5px, 3.4vw, 15px); }
-  .node-years, .node-spouse{ font-size: clamp(9.5px, 2.6vw, 11.5px); color: var(--ink-soft); margin-top: 4px; }
-  .node-occupation{ font-size: clamp(9px, 2.4vw, 11px); color: var(--ink-soft); font-style: italic; margin-top: 3px; }
+  .node-name{ font-family: var(--font-display); font-weight: 700; font-size: 14px; line-height: 1.35; margin-top: 2px; }
+  .node-years, .node-spouse{ font-size: 10.5px; color: var(--ink-soft); margin-top: 3px; line-height: 1.35; }
+  .node-occupation{ font-size: 10.5px; color: var(--ink-soft); font-style: italic; margin-top: 2px; }
   .node-status{
     display:inline-flex; align-items:center; gap:4px;
-    margin-top: 8px; font-size: 10px; font-weight:600;
+    margin-top: auto; font-size: 10px; font-weight:600;
     padding: 2px 8px; border-radius: 999px;
   }
   .node-status.living{ background: var(--gold-tint); color:#7a5c14; }
   .node-status.deceased{ background:#eceae4; color: var(--ink-soft); }
   .node-status .dot{ width:6px; height:6px; }
 
-  /* ============ MODAL (CĂN GIỮA MÀN HÌNH MẶC ĐỊNH & MOBILE) ============ */
+  /* ============ FLOATING ACTION BUTTONS (FAB) CHO MOBILE ============ */
+  .fab-container{
+    position: fixed;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 55;
+    pointer-events: none;
+  }
+  .fab-btn{
+    pointer-events: auto;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 253, 248, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1.5px solid var(--paper-line);
+    color: var(--ink);
+    box-shadow: 0 4px 14px rgba(36,29,23,0.18);
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform .12s ease, background-color .15s ease, opacity .15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+  .fab-btn:active{
+    transform: scale(0.92);
+    background: var(--gold-tint);
+  }
+
+  /* ============ MODAL ============ */
   .modal-overlay{
     display:none;
     position: fixed;
@@ -197,23 +616,47 @@
     border-radius: 16px;
     width:100%;
     max-width: 440px;
-    padding: 24px 20px;
+    padding: 22px 20px;
     max-height: 88vh;
     max-height: 88dvh;
     overflow-y:auto;
     border-top: 5px solid var(--lacquer);
     box-shadow: 0 12px 32px rgba(0,0,0,0.25);
     margin: auto;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
   }
-  .modal-box h2{
+  .modal-header-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .modal-header-row h2{
     font-family: var(--font-display);
     color: var(--lacquer);
-    margin-bottom: 16px;
     font-size: 20px;
-    text-align: center;
+    margin: 0;
+  }
+  .btn-close-modal{
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .btn-close-modal:hover{
+    background: var(--paper-deep);
+    color: var(--lacquer);
   }
 
-  /* Định dạng chi tiết thông tin ở giữa màn hình */
   .detail-content{ margin-top: 10px; }
   .detail-info-group{
     display: flex;
@@ -225,7 +668,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 9px 12px;
+    padding: 10px 12px;
     background: #fbf7ee;
     border: 1px solid var(--paper-line);
     border-radius: 10px;
@@ -248,14 +691,84 @@
 
   .form-group{ margin-bottom: 14px; }
   .form-group label{ display:block; font-size:12.5px; font-weight:600; color: var(--ink-soft); margin-bottom:5px; text-transform: uppercase; }
-  .form-group input, .form-group select, .form-group textarea{ width:100%; padding: 10px 12px; border:1px solid var(--paper-line); border-radius: 8px; font-size:14px; font-family: inherit; background: #fbf7ee; }
+  .form-group input, .form-group select, .form-group textarea{
+    width:100%; padding: 11px 12px; border:1px solid var(--paper-line);
+    border-radius: 8px; font-size: 16px !important; font-family: inherit; background: #fbf7ee;
+  }
   .form-row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
   .modal-actions{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:20px; }
+  .modal-actions .btn{ min-height: 42px; }
   .modal-note{ font-size:12px; color: var(--ink-soft); margin-bottom: 12px; text-align: center; }
   .error-text{ color: #b3261e; font-size: 12px; margin-bottom: 10px; text-align: center; }
   .btn-save{ background: var(--lacquer); color:#fff; }
   .btn-cancel{ background:#efe9db; color: var(--ink); }
   .btn-delete{ background:#fff; color:#b3261e; border:1px solid #b3261e; }
+
+  /* Menu Drawer trên Mobile */
+  .mobile-menu-list{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 10px 0 16px;
+  }
+  .menu-action-item{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #fbf7ee;
+    border: 1px solid var(--paper-line);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background .15s ease, transform .12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-action-item:active{
+    background: var(--gold-tint);
+    transform: scale(0.98);
+  }
+  .menu-action-item .ic{
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .menu-action-item .item-title{
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .menu-action-item .item-desc{
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+  .menu-action-item.item-logout{
+    color: #b3261e;
+    border-color: #f0c4c2;
+  }
+  .menu-action-item.item-logout .item-title{
+    color: #b3261e;
+  }
+
+  .security-tip{
+    background: #fbf7ee;
+    border: 1px solid var(--paper-line);
+    border-left: 4px solid var(--gold);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 12px;
+    line-height: 1.45;
+    text-align: left;
+  }
+  .security-tip ul{ margin: 4px 0 0 16px; padding: 0; }
+  .security-tip li{ margin-bottom: 2px; }
 
   .empty-state{ text-align:center; padding: 70px 20px; color: var(--ink-soft); }
 
@@ -268,105 +781,177 @@
     font-size:26px; color: var(--ink-soft);
   }
   .photo-upload-actions{ display:flex; flex-direction:column; gap:6px; }
-  .photo-upload-actions .btn{ padding:7px 12px; font-size:12px; }
+  .photo-upload-actions .btn{ padding:7px 12px; font-size:12px; min-height: 36px; }
 
   .detail-avatar{
-    width: clamp(76px, 24vw, 110px); height: clamp(76px, 24vw, 110px);
+    width: clamp(76px, 22vw, 100px); height: clamp(76px, 22vw, 100px);
     border-radius: 50%; object-fit: cover; border: 3px solid var(--paper-line);
     box-shadow: 0 4px 10px rgba(0,0,0,0.12);
   }
 
-  .sr-only{
-    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  /* ============ RESPONSIVE BREAKPOINTS ============ */
+  @media (min-width: 769px){
+    .fab-container{ display: none !important; }
   }
 
-  /* ============ RESPONSIVE ============ */
+  @media (max-width: 768px){
+    .desktop-only{ display: none !important; }
+    .mobile-only{ display: inline-flex !important; }
 
-  /* Màn hình rất lớn */
-  @media (min-width: 1400px){
-    .controls{ max-width: 1300px; }
-    .tree-area{ padding: 46px 40px 90px; }
-    .node-card{ min-width: 200px; max-width: 230px; }
-  }
+    header{ padding: 12px 14px 10px; padding-top: max(12px, calc(env(safe-area-inset-top) + 6px)); }
+    header h1{ font-size: 19px; }
 
-  /* Tablet */
-  @media (max-width: 900px){
-    .controls{ gap:7px; padding: 9px 10px; }
-    .legend{ gap:12px; }
-  }
-
-  /* Điện thoại chung */
-  @media (max-width: 640px){
-    header{ padding: 12px 12px 10px; padding-top: max(12px, calc(env(safe-area-inset-top) + 6px)); border-bottom-width: 3px; }
-    header h1{ font-size: 18px; }
-
-    /* Thanh công cụ cuộn ngang */
-    .controls{
-      flex-wrap: nowrap; overflow-x: auto; justify-content: safe center;
-      gap:6px; padding: 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    .toolbar-wrap{
+      position: relative;
+      width: 100%;
     }
-    .controls::-webkit-scrollbar{ display:none; }
-    .controls > *{ flex-shrink: 0; }
-    .btn{ padding: 8px 12px; font-size: 12.5px; gap:5px; }
-    .zoom-btn{ width:34px; height:34px; font-size:17px; }
-    .zoom-label{ width:38px; font-size:10.5px; }
-    .legend{ gap:10px; font-size: 10.5px; padding: 2px 8px 6px; }
-    .sync-status{ padding-bottom: 6px; }
 
-    .tree-area{ padding: 22px 8px 56px; }
-    .tree li{ padding: 22px 6px 0 6px; }
-    .node-status{ font-size: 9px; padding: 2px 7px; }
+    /* Thanh công cụ di động: chỉ giữ thanh tìm kiếm và nút Menu trên cùng 1 hàng */
+    .controls{
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .search-box-wrap{
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+      display: flex;
+      position: relative;
+    }
+    .search-input-inner{
+      width: 100%;
+      min-height: 38px;
+      padding: 4px 10px;
+      box-sizing: border-box;
+      gap: 6px;
+    }
+    .search-input{
+      flex: 1 1 auto;
+      width: 100%;
+      min-width: 0;
+      font-size: 13.5px;
+    }
+    .search-input:focus{
+      width: 100%;
+    }
+    .search-clear-btn{
+      flex-shrink: 0;
+      padding: 4px 6px;
+      font-size: 14px;
+    }
+    .search-dropdown{
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      width: 100%;
+      min-width: 240px;
+      max-width: 100%;
+      box-shadow: 0 12px 30px rgba(36,29,23,0.22);
+      border-radius: 12px;
+      max-height: 60vh;
+      max-height: 60dvh;
+      z-index: 200;
+    }
 
-    /* Modal hiển thị ở CHÍNH GIỮA màn hình điện thoại */
+    .btn-menu{
+      flex-shrink: 0;
+      min-height: 38px;
+      padding: 7px 14px;
+      font-size: 13px;
+      gap: 6px;
+      white-space: nowrap;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--paper-line);
+      box-shadow: 0 1px 4px rgba(36,29,23,0.08);
+    }
+
+    .legend{ gap: 10px; font-size: 11px; padding: 2px 8px 4px; }
+    .sync-status{ padding-bottom: 4px; font-size: 10.5px; }
+
+    /* Vùng sơ đồ có khoảng trống đáy để không bị các nút nổi che khuất */
+    .tree-area{ padding: 16px 8px 100px; }
+    .tree{ padding: 12px 10px 50px; }
+    .tree-roots{ gap: 20px; }
+    .tree-branch{ padding: 0 5px; }
+
+    .node-card{
+      width: clamp(140px, 38vw, 160px);
+      min-height: 160px;
+      padding: 10px 8px;
+    }
+    .node-name{ font-size: 13.5px; }
+    .node-years, .node-spouse{ font-size: 10px; }
+    .node-status{ font-size: 9px; padding: 2px 6px; }
+
+    /* Modal hiển thị full-sheet trên mobile */
     .modal-overlay{
-      display:none;
-      align-items: center !important;
-      justify-content: center !important;
-      padding: 16px !important;
+      padding: 12px !important;
+      padding-top: max(12px, env(safe-area-inset-top)) !important;
+      padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
     }
     .modal-box{
       max-width: 100% !important;
       width: 100% !important;
-      max-height: 86vh !important;
-      max-height: 86dvh !important;
+      max-height: 88dvh !important;
       border-radius: 16px !important;
-      padding: 20px 16px calc(20px + env(safe-area-inset-bottom)) !important;
-      margin: auto !important;
+      padding: 18px 16px calc(18px + env(safe-area-inset-bottom)) !important;
     }
-    .modal-box h2{ font-size: 18px; }
-    .photo-preview{ width:54px; height:54px; font-size:22px; }
-    /* 16px để iOS không tự phóng to khi nhập liệu */
-    .form-group input, .form-group select, .form-group textarea{ font-size: 16px; }
+    .modal-header-row h2{ font-size: 18px; }
+    .form-row{ grid-template-columns: 1fr; gap: 0; }
   }
 
-  /* Điện thoại nhỏ */
   @media (max-width: 480px){
-    .btn .label{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-    .btn{ padding: 12px; border-radius: 50%; min-width:44px; min-height:44px; justify-content:center; }
-    .btn .ic{ font-size: 16px; }
+    .controls{ gap: 6px; padding: 6px 8px; }
+    .btn-menu{ padding: 6px 11px; font-size: 12.5px; min-height: 36px; }
+    .search-input{ font-size: 13px; }
+    .search-input-inner{ min-height: 36px; padding: 3px 8px; }
 
-    .tree li{ padding: 20px 5px 0 5px; }
-    .node-avatar{ border-width: 1.5px; }
+    .fab-container{ right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); gap: 6px; }
+    .fab-btn{ width: 38px; height: 38px; font-size: 15px; }
 
-    .form-row{ grid-template-columns: 1fr; gap: 0; }
-    .form-row .form-group{ margin-bottom: 14px; }
-    .photo-preview{ width:50px; height:50px; font-size:20px; }
-    
-    .modal-actions{ gap: 8px; }
-    .modal-actions .btn{ border-radius: 999px; min-width: 0; min-height: 0; padding: 10px 16px; }
-    .modal-actions .btn .label{ position:static; width:auto; height:auto; margin:0; clip:auto; }
+    .node-card{ width: 142px; min-height: 156px; }
+    .tree-branch{ padding: 0 4px; }
+    .tree-children{ padding-top: 16px; margin-top: 16px; }
+    .tree-children > .tree-branch::before,
+    .tree-children > .tree-branch::after{ top: -16px; height: 16px; }
+    .tree-branch.has-children > .tree-node-wrap::after{ height: 16px; }
   }
 
   @media (max-width: 360px){
-    .btn{ padding: 11px; }
+    .controls{ gap: 5px; padding: 5px 6px; }
+    .btn-menu{ padding: 5px 8px; font-size: 12px; }
+    .search-input{ font-size: 12.5px; }
+    .node-card{ width: 136px; padding: 8px 6px; }
   }
 
-  /* Điện thoại xoay ngang */
+  /* Điện thoại xoay ngang (Landscape) */
   @media (max-height: 480px) and (orientation: landscape){
     header{ display:none; }
     .legend{ display:none; }
-    .modal-box{ max-height: 92vh !important; max-height: 92dvh !important; }
+    .sync-status{ display:none; }
+    .modal-box{ max-height: 94dvh !important; padding: 14px !important; }
+    .tree-area{ padding: 10px 8px 60px; }
+    .fab-container{
+      flex-direction: row;
+      right: 12px;
+      bottom: calc(8px + env(safe-area-inset-bottom));
+      gap: 6px;
+    }
+    .fab-btn{
+      width: 36px;
+      height: 36px;
+      font-size: 14px;
+    }
   }
 </style>
 </head>
@@ -378,23 +963,57 @@
 
 <div class="toolbar-wrap">
   <div class="controls">
-    <button class="btn btn-add admin-only" onclick="openAddModal()"><span class="ic">➕</span><span class="label">Thêm tổ tiên</span></button>
-    <button class="btn btn-export" onclick="exportData()"><span class="ic">💾</span><span class="label">Xuất file</span></button>
-    <label class="btn btn-import admin-only">
+    <!-- Tìm kiếm thành viên -->
+    <div class="search-box-wrap" id="searchBoxWrap">
+      <div class="search-input-inner">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="memberSearch" class="search-input" placeholder="Tìm thành viên..." autocomplete="off" aria-label="Tìm thành viên gia phả">
+        <button type="button" id="searchClearBtn" class="search-clear-btn" style="display:none;" onclick="clearSearch()" title="Xóa tìm kiếm">✕</button>
+      </div>
+      <div id="searchResults" class="search-dropdown" style="display:none;"></div>
+    </div>
+
+    <!-- Nút Thu gọn / Mở rộng tất cả (Hiển thị trên Desktop) -->
+    <button class="btn btn-branch-toggle desktop-only" id="btnToggleAll" onclick="toggleAllBranches()" title="Thu gọn / Mở rộng các nhánh">
+      <span class="ic">🌿</span><span class="label" id="toggleAllLabel">Thu gọn nhánh</span>
+    </button>
+
+    <!-- Nút Vừa khung (Hiển thị trên Desktop) -->
+    <button class="btn btn-fit desktop-only" onclick="fitTree()" title="Thu phóng vừa khung hình và căn giữa"><span class="ic">🔳</span><span class="label">Vừa khung</span></button>
+
+    <!-- Nút trên Desktop -->
+    <button class="btn btn-add admin-only desktop-only" onclick="openAddModal()"><span class="ic">➕</span><span class="label">Thêm tổ tiên</span></button>
+    <button class="btn btn-export desktop-only" onclick="exportData()"><span class="ic">💾</span><span class="label">Xuất file</span></button>
+    <label class="btn btn-import admin-only desktop-only">
       <span class="ic">📁</span><span class="label">Nhập file</span>
       <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
     </label>
 
-    <button class="btn btn-login" id="btnLogin" onclick="openLoginModal()"><span class="ic">🔑</span><span class="label">Đăng nhập</span></button>
-    <button class="btn btn-logout admin-only" id="btnLogout" onclick="logout()"><span class="ic">🚪</span><span class="label">Đăng xuất</span></button>
+    <button class="btn btn-login desktop-only" id="btnLogin" onclick="openLoginModal()"><span class="ic">🔑</span><span class="label">Đăng nhập</span></button>
+    <button class="btn btn-logout admin-only desktop-only" id="btnLogout" onclick="logout()"><span class="ic">🚪</span><span class="label">Đăng xuất</span></button>
 
-    <button class="btn btn-fit" onclick="fitTree()" title="Thu phóng vừa khung hình và căn giữa"><span class="ic">🔳</span><span class="label">Vừa khung</span></button>
-    <div class="zoom-group">
+    <!-- Zoom Desktop -->
+    <div class="zoom-group desktop-only">
       <button class="zoom-btn" onclick="zoomTree(-0.1)" aria-label="Thu nhỏ">−</button>
       <span class="zoom-label" id="zoomLabel">100%</span>
       <button class="zoom-btn" onclick="zoomTree(0.1)" aria-label="Phóng to">+</button>
     </div>
+
+    <!-- Nút Menu Drawer trên Mobile -->
+    <button class="btn btn-menu mobile-only" id="btnMobileMenu" onclick="openMobileMenu()" title="Danh mục chức năng" aria-label="Menu chức năng">
+      <span class="ic">☰</span><span class="label">Menu</span>
+    </button>
   </div>
+
+  <!-- Banner chế độ Tiêu điểm -->
+  <div id="focusBanner" class="focus-banner">
+    <div class="focus-banner-text">
+      <span class="focus-badge">🎯 Tiêu điểm</span>
+      <span id="focusBannerText">Đang xem nhánh...</span>
+    </div>
+    <button class="btn-focus-exit" onclick="exitFocusMode()"><span class="ic">✕</span><span>Xem toàn bộ gia phả</span></button>
+  </div>
+
   <div class="legend">
     <span><i class="dot male"></i>Nam</span>
     <span><i class="dot female"></i>Nữ</span>
@@ -410,23 +1029,120 @@
   </div>
 </div>
 
-<!-- MODAL LOGIN ADMIN -->
-<div class="modal-overlay" id="loginModal">
+<!-- NÚT THAO TÁC NHANH NỔI TRÊN MOBILE (FAB) -->
+<div class="fab-container" id="fabContainer">
+  <button class="fab-btn" onclick="centerOnRoot()" title="Về tổ tiên gốc" aria-label="Về tổ tiên gốc">🏠</button>
+  <button class="fab-btn" onclick="fitTree()" title="Vừa khung" aria-label="Vừa khung">🔳</button>
+  <button class="fab-btn" onclick="zoomTree(0.15)" title="Phóng to" aria-label="Phóng to">+</button>
+  <button class="fab-btn" onclick="zoomTree(-0.15)" title="Thu nhỏ" aria-label="Thu nhỏ">−</button>
+</div>
+
+<!-- MODAL MENU CHỨC NĂNG DÀNH CHO MOBILE -->
+<div class="modal-overlay" id="mobileMenuModal" onclick="if(event.target===this)closeMobileMenu()">
   <div class="modal-box">
-    <h2>Cấu hình Admin (GitHub Sync)</h2>
-    <p class="modal-note">Nhập Personal Access Token GitHub của bạn để kích hoạt quyền.</p>
+    <div class="modal-header-row">
+      <h2>Danh mục chức năng</h2>
+      <button class="btn-close-modal" onclick="closeMobileMenu()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="mobile-menu-list">
+      <button class="menu-action-item" onclick="toggleAllBranches(); closeMobileMenu();">
+        <span class="ic">🌿</span>
+        <div class="item-text">
+          <div class="item-title" id="menuToggleLabel">Thu gọn nhánh</div>
+          <div class="item-desc">Thu gọn hoặc mở rộng toàn bộ các nhánh con</div>
+        </div>
+      </button>
+
+      <button class="menu-action-item" onclick="fitTree(); closeMobileMenu();">
+        <span class="ic">🔳</span>
+        <div class="item-text">
+          <div class="item-title">Vừa khung hình</div>
+          <div class="item-desc">Tự động căn chỉnh toàn bộ cây vừa màn hình</div>
+        </div>
+      </button>
+
+      <button class="menu-action-item" onclick="centerOnRoot(); closeMobileMenu();">
+        <span class="ic">🏠</span>
+        <div class="item-text">
+          <div class="item-title">Về tổ tiên gốc</div>
+          <div class="item-desc">Đưa khung nhìn về cụ tổ Đời I</div>
+        </div>
+      </button>
+
+      <button class="menu-action-item" onclick="exportData(); closeMobileMenu();">
+        <span class="ic">💾</span>
+        <div class="item-text">
+          <div class="item-title">Xuất file gia phả (.json)</div>
+          <div class="item-desc">Tải dữ liệu sao lưu về máy</div>
+        </div>
+      </button>
+
+      <button class="menu-action-item admin-only" onclick="openAddModal(); closeMobileMenu();">
+        <span class="ic">➕</span>
+        <div class="item-text">
+          <div class="item-title">Thêm tổ tiên / thành viên</div>
+          <div class="item-desc">Dành cho Admin quản trị gia phả</div>
+        </div>
+      </button>
+
+      <label class="menu-action-item admin-only" style="cursor:pointer;">
+        <span class="ic">📁</span>
+        <div class="item-text">
+          <div class="item-title">Nhập file gia phả (.json)</div>
+          <div class="item-desc">Khôi phục từ tệp tin đã sao lưu</div>
+        </div>
+        <input type="file" accept=".json" onchange="importData(this); closeMobileMenu();" style="display:none;">
+      </label>
+
+      <button class="menu-action-item" id="btnMenuLogin" onclick="openLoginModal(); closeMobileMenu();">
+        <span class="ic">🔑</span>
+        <div class="item-text">
+          <div class="item-title">Đăng nhập Admin</div>
+          <div class="item-desc">Kích hoạt quyền sửa & đồng bộ GitHub</div>
+        </div>
+      </button>
+
+      <button class="menu-action-item admin-only item-logout" id="btnMenuLogout" onclick="logout(); closeMobileMenu();">
+        <span class="ic">🚪</span>
+        <div class="item-text">
+          <div class="item-title">Đăng xuất Admin</div>
+          <div class="item-desc">Xóa phiên quản trị an toàn</div>
+        </div>
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" style="width:100%;" onclick="closeMobileMenu()">Đóng menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LOGIN ADMIN -->
+<div class="modal-overlay" id="loginModal" onclick="if(event.target===this)closeLoginModal()">
+  <div class="modal-box">
+    <div class="modal-header-row">
+      <h2>Cấu hình Admin (GitHub Sync)</h2>
+      <button class="btn-close-modal" onclick="closeLoginModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="security-tip">
+      <strong>Lưu ý bảo mật:</strong>
+      <ul>
+        <li>Nên dùng <b>Fine-grained Personal Access Token</b> chỉ cấp quyền <code>Contents: Read and write</code> cho riêng repo này.</li>
+        <li>Token chỉ lưu trong phiên làm việc (<code>sessionStorage</code>) và tự xóa khi đóng trình duyệt.</li>
+      </ul>
+    </div>
+    <p class="modal-note">Nhập Personal Access Token GitHub của bạn để kích hoạt quyền quản trị.</p>
     <div class="form-group">
       <label>GitHub Personal Access Token</label>
-      <input type="password" id="ghToken" placeholder="ghp_...">
+      <input type="password" id="ghToken" placeholder="ghp_... hoặc github_pat_..." autocomplete="off">
     </div>
     <div class="form-row">
       <div class="form-group">
         <label>GitHub Owner</label>
-        <input type="text" id="ghOwner" placeholder="...">
+        <input type="text" id="ghOwner" placeholder="luongtien06">
       </div>
       <div class="form-group">
         <label>GitHub Repository</label>
-        <input type="text" id="ghRepo" placeholder="...">
+        <input type="text" id="ghRepo" placeholder="Family_Luong">
       </div>
     </div>
     <p id="loginError" class="error-text"></p>
@@ -438,9 +1154,12 @@
 </div>
 
 <!-- MODAL ADD/EDIT MEMBER -->
-<div class="modal-overlay" id="memberModal">
+<div class="modal-overlay" id="memberModal" onclick="if(event.target===this)closeModal()">
   <div class="modal-box">
-    <h2 id="modalTitle">Thêm thành viên</h2>
+    <div class="modal-header-row">
+      <h2 id="modalTitle">Thêm thành viên</h2>
+      <button class="btn-close-modal" onclick="closeModal()" aria-label="Đóng">✕</button>
+    </div>
     <div class="form-group">
       <label>Họ và tên *</label>
       <input type="text" id="mName" placeholder="...">
@@ -508,7 +1227,7 @@
     </div>
     <div class="form-group">
       <label>Cha / Mẹ</label>
-      <select id="mParentId"><option value="">-- Tổ tiên --</option></select>
+      <select id="mParentId"><option value="">-- Tổ tiên (Gốc) --</option></select>
     </div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeModal()">Hủy</button>
@@ -519,12 +1238,16 @@
 </div>
 
 <!-- MODAL VIEW DETAIL -->
-<div class="modal-overlay" id="detailModal">
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
   <div class="modal-box">
-    <h2 id="dName"></h2>
+    <div class="modal-header-row">
+      <h2 id="dName"></h2>
+      <button class="btn-close-modal" onclick="closeDetail()" aria-label="Đóng">✕</button>
+    </div>
     <div id="dContent" class="detail-content"></div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeDetail()">Đóng</button>
+      <button class="btn btn-focus" onclick="focusFromDetail()" title="Xem riêng nhánh của người này"><span class="ic">🎯</span><span class="label">Khám phá nhánh</span></button>
       <button class="btn btn-add admin-only" onclick="editFromDetail()">Sửa</button>
       <button class="btn btn-add admin-only" onclick="addChildFromDetail()">Thêm con</button>
     </div>
@@ -544,17 +1267,66 @@
   let currentPhotoData = '';
   let currentSpousePhotoData = '';
 
+  // Quản lý thu gọn nhánh, tiêu điểm và trạng thái dữ liệu
+  let collapsedNodeIds = new Set();
+  let focusMemberId = null;
+  let isLoadingData = false;
+
   let ghConfig = null;
   try { ghConfig = JSON.parse(sessionStorage.getItem('ghAdminConfig')) || null; } catch (e) { ghConfig = null; }
 
   async function init() {
     enableDragPan();
+    setupSearch();
     checkAuthUI();
     await loadData();
     renderTree();
-    // Vừa khung tự động duy nhất 1 lần khi mở trang
-    await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]);
-    fitTree();
+    
+    // Tự động điều chỉnh khung nhìn thông minh theo màn hình
+    await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1200))]);
+    initTreeViewport();
+
+    // Lắng nghe thay đổi kích thước & xoay màn hình điện thoại
+    window.addEventListener('resize', handleWindowResize);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(handleWindowResize, 200);
+    });
+  }
+
+  function handleWindowResize() {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile && zoomLevel < 0.45) {
+      applyZoom(0.75, false);
+      centerOnRoot();
+    }
+  }
+
+  function initTreeViewport() {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      // Trên điện thoại: Đặt tỉ lệ đọc rõ chữ (0.8) và căn giữa ngay vào Cụ tổ Đời I
+      applyZoom(0.8, false);
+      centerOnRoot();
+    } else {
+      fitTree();
+    }
+  }
+
+  // Căn khung nhìn vào thẻ Cụ tổ gốc
+  function centerOnRoot() {
+    const area = document.getElementById('treeArea');
+    if (!area) return;
+    const rootCard = document.querySelector('.tree-roots > .tree-branch > .tree-node-wrap > .node-card') || document.querySelector('.node-card');
+    if (rootCard) {
+      const areaRect = area.getBoundingClientRect();
+      const cardRect = rootCard.getBoundingClientRect();
+      const deltaX = (cardRect.left + cardRect.width / 2) - (areaRect.left + areaRect.width / 2);
+      area.scrollLeft = area.scrollLeft + deltaX;
+      area.scrollTop = 0;
+    } else {
+      area.scrollLeft = (area.scrollWidth - area.clientWidth) / 2;
+      area.scrollTop = 0;
+    }
   }
 
   // ==========================================
@@ -562,12 +1334,16 @@
   // ==========================================
   function checkAuthUI() {
     const loginBtn = document.getElementById('btnLogin');
+    const menuLoginBtn = document.getElementById('btnMenuLogin');
+    const isAdm = isAdmin();
+
     document.querySelectorAll('.admin-only').forEach(el => el.setAttribute('data-admin', '1'));
 
     document.querySelectorAll('[data-admin]').forEach(el => {
-      el.classList.toggle('admin-only', !isAdmin());
+      el.classList.toggle('admin-only', !isAdm);
     });
-    if (loginBtn) loginBtn.style.display = isAdmin() ? 'none' : 'inline-flex';
+    if (loginBtn) loginBtn.style.display = isAdm ? 'none' : 'inline-flex';
+    if (menuLoginBtn) menuLoginBtn.style.display = isAdm ? 'none' : 'flex';
   }
 
   function isAdmin() {
@@ -576,14 +1352,26 @@
 
   function openLoginModal() {
     document.getElementById('ghToken').value = ghConfig?.token || '';
-    document.getElementById('ghOwner').value = ghConfig?.owner || '';
-    document.getElementById('ghRepo').value = ghConfig?.repo || '';
+    document.getElementById('ghOwner').value = ghConfig?.owner || 'luongtien06';
+    document.getElementById('ghRepo').value = ghConfig?.repo || 'Family_Luong';
     document.getElementById('loginError').textContent = '';
     document.getElementById('loginModal').style.display = 'flex';
   }
 
   function closeLoginModal() {
     document.getElementById('loginModal').style.display = 'none';
+  }
+
+  function openMobileMenu() {
+    updateToggleAllButton();
+    const modal = document.getElementById('mobileMenuModal');
+    if (modal) modal.style.display = 'flex';
+    checkAuthUI();
+  }
+
+  function closeMobileMenu() {
+    const modal = document.getElementById('mobileMenuModal');
+    if (modal) modal.style.display = 'none';
   }
 
   function loginAdmin() {
@@ -606,6 +1394,8 @@
   function logout() {
     ghConfig = null;
     sessionStorage.removeItem('ghAdminConfig');
+    const tokenInput = document.getElementById('ghToken');
+    if (tokenInput) tokenInput.value = '';
     checkAuthUI();
     renderTree();
     loadData().then(() => renderTree());
@@ -627,6 +1417,7 @@
   }
 
   async function loadData() {
+    isLoadingData = true;
     setSyncStatus('syncing', 'Đang tải dữ liệu...');
 
     const localTemp = localStorage.getItem('temp_family_data');
@@ -655,6 +1446,8 @@
       } else {
         setSyncStatus('error', 'Không đọc được file data.json');
       }
+    } finally {
+      isLoadingData = false;
     }
   }
 
@@ -712,7 +1505,7 @@
   }
 
   // ==========================================
-  // RENDER CÂY GIA PHẢ
+  // RENDER CÂY GIA PHẢ HIỆN ĐẠI (FLEXBOX TREE)
   // ==========================================
   const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV'];
 
@@ -720,34 +1513,143 @@
     const root = document.getElementById('treeRoot');
     root.innerHTML = '';
 
-    const roots = members.filter(m => m.parentId === null || m.parentId === undefined || m.parentId === "");
-
-    if (roots.length === 0) {
+    if (!members || members.length === 0) {
       root.innerHTML = `<div class="empty-state"><p>Chưa có dữ liệu gia phả. Hãy "Thêm tổ tiên".</p></div>`;
       return;
     }
 
-    const ul = document.createElement('ul');
-    roots.forEach(r => ul.appendChild(buildNodeLi(r)));
-    root.appendChild(ul);
+    let visibleSet = null;
+    let rootsToRender = [];
+
+    const focusBanner = document.getElementById('focusBanner');
+    const focusText = document.getElementById('focusBannerText');
+
+    if (focusMemberId !== null) {
+      const focusTarget = members.find(m => m.id === focusMemberId);
+      if (focusTarget) {
+        const ancestors = [];
+        let curr = focusTarget;
+        while (curr && curr.parentId) {
+          const parent = members.find(m => m.id === curr.parentId);
+          if (parent) {
+            ancestors.push(parent);
+            collapsedNodeIds.delete(parent.id);
+            curr = parent;
+          } else {
+            break;
+          }
+        }
+
+        const descendants = [];
+        function collectDescendants(pid) {
+          const kids = members.filter(m => m.parentId === pid);
+          kids.forEach(k => {
+            descendants.push(k);
+            collectDescendants(k.id);
+          });
+        }
+        collectDescendants(focusTarget.id);
+
+        visibleSet = new Set([focusTarget.id, ...ancestors.map(a => a.id), ...descendants.map(d => d.id)]);
+
+        const topAncestor = ancestors.length > 0 ? ancestors[ancestors.length - 1] : focusTarget;
+        rootsToRender = [topAncestor];
+
+        if (focusBanner && focusText) {
+          focusBanner.style.display = 'flex';
+          const genDisp = ROMAN[focusTarget.generation] || focusTarget.generation;
+          focusText.innerHTML = `Đang xem tiêu điểm: <strong>${escapeHTML(focusTarget.name)}</strong> (Đời ${genDisp})`;
+        }
+      } else {
+        focusMemberId = null;
+        if (focusBanner) focusBanner.style.display = 'none';
+        rootsToRender = members.filter(m => m.parentId === null || m.parentId === undefined || m.parentId === "");
+      }
+    } else {
+      if (focusBanner) focusBanner.style.display = 'none';
+      rootsToRender = members.filter(m => m.parentId === null || m.parentId === undefined || m.parentId === "");
+    }
+
+    if (rootsToRender.length === 0) {
+      rootsToRender = [members[0]];
+    }
+
+    const rootsWrap = document.createElement('div');
+    rootsWrap.className = 'tree-roots';
+    rootsToRender.forEach(r => {
+      rootsWrap.appendChild(buildNodeBranch(r, visibleSet));
+    });
+    root.appendChild(rootsWrap);
+
+    updateToggleAllButton();
   }
 
-  function buildNodeLi(member) {
-    const li = document.createElement('li');
-    li.appendChild(buildCard(member));
+  function buildNodeBranch(member, visibleSet = null) {
+    const branch = document.createElement('div');
+    branch.className = 'tree-branch';
+    branch.id = `branch-${member.id}`;
 
-    const children = members.filter(m => m.parentId === member.id);
-    if (children.length > 0) {
-      const childUl = document.createElement('ul');
-      children.forEach(c => childUl.appendChild(buildNodeLi(c)));
-      li.appendChild(childUl);
+    let children = members.filter(m => m.parentId === member.id);
+    if (visibleSet) {
+      children = children.filter(c => visibleSet.has(c.id));
     }
-    return li;
+
+    const hasChildren = children.length > 0;
+    if (hasChildren) {
+      branch.classList.add('has-children');
+    }
+
+    const isCollapsed = collapsedNodeIds.has(member.id);
+    if (isCollapsed && hasChildren) {
+      branch.classList.add('is-collapsed');
+    }
+
+    const nodeWrap = document.createElement('div');
+    nodeWrap.className = 'tree-node-wrap';
+
+    const card = buildCard(member);
+    nodeWrap.appendChild(card);
+
+    if (hasChildren) {
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = `branch-toggle-btn ${isCollapsed ? 'collapsed' : ''}`;
+      toggleBtn.title = isCollapsed ? `Mở rộng ${children.length} nhánh con` : 'Thu gọn nhánh';
+      toggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+      toggleBtn.innerHTML = isCollapsed
+        ? `<span class="toggle-icon">▸</span><span class="toggle-count">${children.length} con</span>`
+        : `<span class="toggle-icon">▾</span>`;
+      toggleBtn.onclick = (e) => {
+        e.stopPropagation();
+        toggleBranch(member.id);
+      };
+      nodeWrap.appendChild(toggleBtn);
+    }
+
+    branch.appendChild(nodeWrap);
+
+    if (hasChildren) {
+      const childrenWrap = document.createElement('div');
+      childrenWrap.className = 'tree-children';
+      if (isCollapsed) {
+        childrenWrap.style.display = 'none';
+      }
+      children.forEach(c => {
+        childrenWrap.appendChild(buildNodeBranch(c, visibleSet));
+      });
+      branch.appendChild(childrenWrap);
+    }
+
+    return branch;
   }
 
   function buildCard(m) {
     const card = document.createElement('div');
+    card.id = `card-${m.id}`;
     card.className = `node-card ${m.gender}`;
+    if (focusMemberId === m.id) {
+      card.classList.add('is-focus-root');
+    }
     card.onclick = () => openDetail(m.id);
 
     const genDisplay = ROMAN[m.generation] || m.generation;
@@ -763,7 +1665,9 @@
         : `<div class="node-avatar ${spouseBorderClass}">👤</div>`;
       avatarsHtml = `<div class="node-avatars-wrap">${memberAvatarHtml}<span class="avatar-heart">♥</span>${spouseAvatarHtml}</div>`;
     }
+    const focusTagHtml = focusMemberId === m.id ? `<span class="focus-tag">🎯 Tiêu điểm</span>` : '';
     card.innerHTML = `
+      ${focusTagHtml}
       ${avatarsHtml}
       <div class="node-eyebrow">Đời ${genDisplay}</div>
       <div class="node-name">${escapeHTML(m.name)}</div>
@@ -785,7 +1689,359 @@
   }
 
   // ==========================================
-  // THU PHÓNG, VỪA KHUNG, KÉO CHUỘT
+  // THU GỌN VÀ MỞ RỘNG NHÁNH
+  // ==========================================
+  function toggleBranch(id) {
+    if (collapsedNodeIds.has(id)) {
+      collapsedNodeIds.delete(id);
+    } else {
+      collapsedNodeIds.add(id);
+    }
+    renderTree();
+  }
+
+  function toggleAllBranches() {
+    const parentsWithChildren = members.filter(m => members.some(c => c.parentId === m.id));
+    if (parentsWithChildren.length === 0) return;
+    const allCollapsed = parentsWithChildren.every(p => collapsedNodeIds.has(p.id));
+
+    if (allCollapsed) {
+      collapsedNodeIds.clear();
+    } else {
+      parentsWithChildren.forEach(p => collapsedNodeIds.add(p.id));
+    }
+    renderTree();
+  }
+
+  function updateToggleAllButton() {
+    const btn = document.getElementById('btnToggleAll');
+    const label = document.getElementById('toggleAllLabel');
+    const menuLabel = document.getElementById('menuToggleLabel');
+    if (!btn || !label) return;
+    const parents = members.filter(m => members.some(c => c.parentId === m.id));
+    const allCollapsed = parents.length > 0 && parents.every(p => collapsedNodeIds.has(p.id));
+    label.textContent = allCollapsed ? 'Mở tất cả' : 'Thu gọn nhánh';
+    if (menuLabel) menuLabel.textContent = allCollapsed ? 'Mở rộng tất cả các nhánh' : 'Thu gọn các nhánh con';
+    btn.title = allCollapsed ? 'Mở rộng toàn bộ các nhánh gia phả' : 'Thu gọn các nhánh để quan sát tổng quan';
+  }
+
+  // ==========================================
+  // CHẾ ĐỘ XEM TIÊU ĐIỂM (FOCUS MODE)
+  // ==========================================
+  function focusOnMember(id) {
+    focusMemberId = id;
+    renderTree();
+    panToMember(id);
+  }
+
+  function focusFromDetail() {
+    if (detailId) {
+      const id = detailId;
+      closeDetail();
+      focusOnMember(id);
+    }
+  }
+
+  function exitFocusMode() {
+    const oldId = focusMemberId;
+    focusMemberId = null;
+    renderTree();
+    if (oldId) {
+      panToMember(oldId);
+    }
+  }
+
+  // ==========================================
+  // TÌM KIẾM THÀNH VIÊN VÀ AUTO-PAN
+  // ==========================================
+  function removeVietnameseTones(str) {
+    if (!str) return '';
+    return String(str)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .toLowerCase()
+      .trim();
+  }
+
+  function setupSearch() {
+    const input = document.getElementById('memberSearch');
+    const dropdown = document.getElementById('searchResults');
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (!input || !dropdown) return;
+
+    let debounceTimer = null;
+
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      const q = input.value.trim();
+      if (clearBtn) clearBtn.style.display = q ? 'inline-block' : 'none';
+
+      if (!q) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        clearSearchState();
+        return;
+      }
+
+      debounceTimer = setTimeout(() => {
+        renderSearchResults(q);
+      }, 80);
+    });
+
+    input.addEventListener('focus', () => {
+      const q = input.value.trim();
+      if (q) {
+        renderSearchResults(q);
+      }
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const firstItem = dropdown.querySelector('.search-item');
+        if (firstItem) {
+          firstItem.click();
+        }
+      } else if (e.key === 'Escape') {
+        clearSearch();
+        input.blur();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      const wrap = document.getElementById('searchBoxWrap');
+      if (wrap && !wrap.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  }
+
+  function clearSearchState() {
+    document.querySelectorAll('.card-search-highlight, .highlight-pulse').forEach(el => {
+      el.classList.remove('card-search-highlight', 'highlight-pulse');
+    });
+  }
+
+  function clearSearch() {
+    const input = document.getElementById('memberSearch');
+    const dropdown = document.getElementById('searchResults');
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (input) input.value = '';
+    if (dropdown) {
+      dropdown.style.display = 'none';
+      dropdown.innerHTML = '';
+    }
+    if (clearBtn) clearBtn.style.display = 'none';
+    clearSearchState();
+  }
+
+  function renderSearchResults(query) {
+    const dropdown = document.getElementById('searchResults');
+    if (!dropdown) return;
+
+    if (isLoadingData || !members || members.length === 0) {
+      dropdown.innerHTML = `
+        <div class="search-empty">
+          <span style="font-size:16px;">⏳</span>
+          <div>Đang tải dữ liệu gia phả, vui lòng đợi...</div>
+        </div>
+      `;
+      dropdown.style.display = 'block';
+      return;
+    }
+
+    const rawQ = query.trim().toLowerCase();
+    const cleanQ = removeVietnameseTones(query);
+    const words = cleanQ.split(/\s+/).filter(Boolean);
+
+    // Tìm kiếm thông minh: hỗ trợ cả có dấu và không dấu, nhiều trường thông tin
+    const scored = [];
+
+    members.forEach(m => {
+      const rawName = String(m.name || '').toLowerCase();
+      const cleanName = removeVietnameseTones(m.name);
+      const rawSpouse = String(m.spouse || '').toLowerCase();
+      const cleanSpouse = removeVietnameseTones(m.spouse);
+      const rawOcc = String(m.occupation || '').toLowerCase();
+      const cleanOcc = removeVietnameseTones(m.occupation);
+      const rawNote = String(m.note || '').toLowerCase();
+      const cleanNote = removeVietnameseTones(m.note);
+      const dob = String(m.dob || '');
+      const dod = String(m.dod || '');
+      const genNum = String(m.generation);
+      const genStr = `doi ${m.generation}`;
+      const romanGen = ROMAN[m.generation] ? ROMAN[m.generation].toLowerCase() : '';
+
+      let score = 0;
+
+      // 1. Khớp chính xác tên (có dấu hoặc không dấu)
+      if (rawName === rawQ || cleanName === cleanQ) {
+        score += 100;
+      } else if (rawName.startsWith(rawQ) || cleanName.startsWith(cleanQ)) {
+        score += 60;
+      } else if (rawName.includes(rawQ) || cleanName.includes(cleanQ)) {
+        score += 40;
+      } else if (words.length > 0 && words.every(w => cleanName.includes(w))) {
+        score += 30;
+      }
+
+      // 2. Khớp theo vợ / chồng
+      if (rawSpouse.includes(rawQ) || cleanSpouse.includes(cleanQ)) {
+        score += 25;
+      } else if (words.length > 0 && words.every(w => cleanSpouse.includes(w))) {
+        score += 15;
+      }
+
+      // 3. Khớp theo nghề nghiệp hoặc ghi chú
+      if (rawOcc.includes(rawQ) || cleanOcc.includes(cleanQ)) {
+        score += 15;
+      }
+      if (rawNote.includes(rawQ) || cleanNote.includes(cleanQ)) {
+        score += 10;
+      }
+
+      // 4. Khớp năm sinh / mất hoặc thế hệ
+      if (dob.includes(rawQ) || dod.includes(rawQ)) {
+        score += 20;
+      }
+      if (genNum === cleanQ || genStr.includes(cleanQ) || romanGen === cleanQ) {
+        score += 15;
+      }
+
+      if (score > 0) {
+        scored.push({ member: m, score });
+      }
+    });
+
+    dropdown.innerHTML = '';
+
+    if (scored.length === 0) {
+      dropdown.innerHTML = `
+        <div class="search-empty">
+          <span style="font-size:16px;">🔍</span>
+          <div>Không tìm thấy thành viên nào phù hợp</div>
+          <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">Thử tìm theo tên không dấu hoặc năm sinh</div>
+        </div>
+      `;
+      dropdown.style.display = 'block';
+      return;
+    }
+
+    // Sắp xếp: điểm cao nhất lên đầu, nếu bằng điểm thì ưu tiên thế hệ nhỏ hơn (đời trên)
+    scored.sort((a, b) => b.score - a.score || a.member.generation - b.member.generation);
+
+    scored.slice(0, 10).forEach(({ member: m }) => {
+      const item = document.createElement('div');
+      item.className = 'search-item';
+      const borderClass = m.gender === 'female' ? 'female-border' : 'male-border';
+      const avatarHtml = m.photo
+        ? `<div class="search-item-avatar ${borderClass}" style="background-image:url('${m.photo}')"></div>`
+        : `<div class="search-item-avatar ${borderClass}">👤</div>`;
+      const genDisp = ROMAN[m.generation] || m.generation;
+      const years = (m.dob || '?') + ' - ' + (m.dod || 'nay');
+      const spouseText = m.spouse ? ` • ♥ ${escapeHTML(m.spouse)}` : '';
+
+      // Kiểm tra xem thành viên này có nằm trong nhánh đang thu gọn không
+      let isAncestorCollapsed = false;
+      let curr = m;
+      while (curr && curr.parentId) {
+        if (collapsedNodeIds.has(curr.parentId)) {
+          isAncestorCollapsed = true;
+          break;
+        }
+        curr = members.find(p => p.id === curr.parentId);
+      }
+      const branchNotice = isAncestorCollapsed ? `<span class="search-item-badge">🌿 Nhánh thu gọn</span>` : '';
+
+      item.innerHTML = `
+        ${avatarHtml}
+        <div class="search-item-info">
+          <div class="search-item-name">${escapeHTML(m.name)} ${branchNotice}</div>
+          <div class="search-item-sub">Đời ${genDisp} • ${years}${spouseText}</div>
+        </div>
+      `;
+
+      item.onclick = () => {
+        selectMemberFromSearch(m);
+      };
+      dropdown.appendChild(item);
+    });
+
+    dropdown.style.display = 'block';
+  }
+
+  function selectMemberFromSearch(m) {
+    const input = document.getElementById('memberSearch');
+    const dropdown = document.getElementById('searchResults');
+    const clearBtn = document.getElementById('searchClearBtn');
+
+    if (input) {
+      input.value = m.name;
+      input.blur();
+    }
+    if (clearBtn) clearBtn.style.display = 'inline-block';
+    if (dropdown) dropdown.style.display = 'none';
+
+    panToMember(m.id);
+  }
+
+  function panToMember(id) {
+    let needsRender = false;
+
+    // Thoát chế độ tiêu điểm nếu đang xem nhánh khác
+    if (focusMemberId !== null) {
+      focusMemberId = null;
+      needsRender = true;
+    }
+
+    // Mở tất cả các nhánh cha/ông của thành viên nếu đang bị thu gọn
+    let curr = members.find(m => m.id === id);
+    while (curr && curr.parentId) {
+      if (collapsedNodeIds.has(curr.parentId)) {
+        collapsedNodeIds.delete(curr.parentId);
+        needsRender = true;
+      }
+      curr = members.find(m => m.id === curr.parentId);
+    }
+
+    if (needsRender) {
+      renderTree();
+    }
+
+    // Tự động điều chỉnh tỉ lệ thu phóng trên mobile để nhìn thấy rõ thẻ thành viên
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      if (zoomLevel < 0.7) {
+        applyZoom(0.8, false);
+      }
+    } else {
+      if (zoomLevel < 0.4) {
+        applyZoom(0.85, false);
+      }
+    }
+
+    const scrollAndHighlight = () => {
+      const card = document.getElementById('card-' + id);
+      if (!card) return;
+
+      // Xóa các highlight cũ và thêm highlight nổi bật mới
+      clearSearchState();
+      card.classList.add('card-search-highlight', 'highlight-pulse');
+      setTimeout(() => card.classList.remove('highlight-pulse'), 2500);
+
+      try {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      } catch (e) {
+        card.scrollIntoView(true);
+      }
+    };
+
+    // Chờ DOM cập nhật và bàn phím ảo (nếu có) đóng lại
+    setTimeout(scrollAndHighlight, needsRender ? 100 : 40);
+  }
+
+  // ==========================================
+  // THU PHÓNG, VỪA KHUNG, KÉO CHUỘT & CẢM ỨNG
   // ==========================================
   function applyZoom(z, keepCenter = true) {
     const area = document.getElementById('treeArea');
@@ -794,9 +2050,10 @@
     const cx = (area.scrollLeft + area.clientWidth / 2) / old;
     const cy = (area.scrollTop + area.clientHeight / 2) / old;
 
-    zoomLevel = Math.max(0.1, Math.min(2, Math.round(z * 100) / 100));
+    zoomLevel = Math.max(0.15, Math.min(2.0, Math.round(z * 100) / 100));
     el.style.zoom = zoomLevel;
-    document.getElementById('zoomLabel').textContent = Math.round(zoomLevel * 100) + '%';
+    const label = document.getElementById('zoomLabel');
+    if (label) label.textContent = Math.round(zoomLevel * 100) + '%';
 
     if (keepCenter) {
       area.scrollLeft = cx * zoomLevel - area.clientWidth / 2;
@@ -815,16 +2072,25 @@
     el.style.zoom = 1;
     const w = tree.scrollWidth, h = tree.scrollHeight;
     if (!w || !h) return;
-    const s = Math.min(1, (area.clientWidth - 32) / w, (area.clientHeight - 60) / h);
+    const isMobile = window.innerWidth <= 768;
+
+    let s = Math.min(1, (area.clientWidth - 28) / w, (area.clientHeight - 60) / h);
+    if (isMobile) {
+      // Trên điện thoại, không bao giờ ép chữ bé dưới 0.45 để đảm bảo luôn đọc được
+      s = Math.max(0.45, Math.min(0.85, s));
+    } else {
+      s = Math.max(0.2, Math.min(1.2, s));
+    }
     applyZoom(s, false);
-    area.scrollLeft = (area.scrollWidth - area.clientWidth) / 2;
-    area.scrollTop = 0;
+    centerOnRoot();
   }
 
   function enableDragPan() {
     const area = document.getElementById('treeArea');
+    if (!area) return;
     let down = false, moved = false, sx = 0, sy = 0, sl = 0, st = 0;
 
+    // Chuột trên máy tính
     area.addEventListener('mousedown', e => {
       if (e.button !== 0) return;
       down = true; moved = false;
@@ -857,6 +2123,76 @@
       e.preventDefault();
       applyZoom(zoomLevel * (e.deltaY < 0 ? 1.1 : 0.9));
     }, { passive: false });
+
+    // Cảm ứng điện thoại / máy tính bảng (Single-touch pan & Pinch-to-zoom)
+    let touchStartX = 0, touchStartY = 0;
+    let touchStartDist = 0;
+    let touchStartZoom = 1;
+    let isPinching = false;
+    let isTouchDragging = false;
+    let touchMoved = false;
+    let tsl = 0, tst = 0;
+
+    area.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        isPinching = true;
+        isTouchDragging = false;
+        touchMoved = false;
+        touchStartDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        touchStartZoom = zoomLevel;
+      } else if (e.touches.length === 1) {
+        isPinching = false;
+        isTouchDragging = true;
+        touchMoved = false;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        tsl = area.scrollLeft;
+        tst = area.scrollTop;
+      }
+    }, { passive: true });
+
+    area.addEventListener('touchmove', e => {
+      if (isPinching && e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (touchStartDist > 0) {
+          const factor = dist / touchStartDist;
+          applyZoom(touchStartZoom * factor);
+        }
+        e.preventDefault();
+      } else if (isTouchDragging && e.touches.length === 1) {
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        if (!touchMoved && Math.hypot(dx, dy) < 6) return;
+        touchMoved = true;
+        moved = true; // Ngăn ngừa click nhầm vào thẻ khi đang lướt
+        area.classList.add('dragging');
+        area.scrollLeft = tsl - dx;
+        area.scrollTop = tst - dy;
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    area.addEventListener('touchend', e => {
+      if (e.touches.length < 2) isPinching = false;
+      if (e.touches.length === 0) {
+        isTouchDragging = false;
+        if (touchMoved) {
+          setTimeout(() => {
+            moved = false;
+            touchMoved = false;
+            area.classList.remove('dragging');
+          }, 120);
+        } else {
+          area.classList.remove('dragging');
+        }
+      }
+    }, { passive: true });
   }
 
   // ==========================================
@@ -1019,6 +2355,9 @@
         id: nextId++,
         name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData, spousePhoto: currentSpousePhotoData
       });
+      if (parentId && collapsedNodeIds.has(parentId)) {
+        collapsedNodeIds.delete(parentId);
+      }
     }
 
     renderTree();
@@ -1033,7 +2372,12 @@
     function removeBranch(id) {
       const kids = members.filter(m => m.parentId === id).map(m => m.id);
       members = members.filter(m => m.id !== id);
+      collapsedNodeIds.delete(id);
       kids.forEach(removeBranch);
+    }
+
+    if (focusMemberId === editingId) {
+      focusMemberId = null;
     }
 
     removeBranch(editingId);
@@ -1043,7 +2387,7 @@
   }
 
   // ==========================================
-  // CHI TIẾT (CĂN GIỮA MÀN HÌNH DI ĐỘNG)
+  // CHI TIẾT THÀNH VIÊN
   // ==========================================
   function openDetail(id) {
     detailId = id;
@@ -1053,7 +2397,6 @@
     document.getElementById('dName').textContent = m.name;
     const isDeceased = !!(m.dod && String(m.dod).trim());
     
-    // Hình ảnh đại diện đôi hoặc đơn
     const coupleHtml = (m.photo || (m.spouse && m.spousePhoto)) ? `
       <div style="display:flex;justify-content:center;align-items:center;gap:14px;margin-bottom:16px;">
         ${m.photo ? `<img src="${m.photo}" alt="${escapeHTML(m.name)}" class="detail-avatar">` : ''}
@@ -1061,7 +2404,6 @@
       </div>
     ` : '';
 
-    // Trình bày thông tin dạng thẻ đẹp mắt
     document.getElementById('dContent').innerHTML = `
       ${coupleHtml}
       <div class="detail-info-group">
@@ -1186,12 +2528,17 @@
     reader.readAsText(file);
   }
 
-  // Phím Esc đóng các hộp thoại
+  // Phím Esc đóng các hộp thoại, dropdown tìm kiếm và chế độ tiêu điểm
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeModal();
       closeDetail();
       closeLoginModal();
+      closeMobileMenu();
+      clearSearch();
+      if (focusMemberId !== null) {
+        exitFocusMode();
+      }
     }
   });
 
