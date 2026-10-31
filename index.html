@@ -789,6 +789,48 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.12);
   }
 
+  /* Admin tabs & Photo Slug Badges */
+  .admin-tabs{ display:flex; gap:6px; margin: 10px 0 14px; border-bottom:1px solid var(--paper-line); padding-bottom:8px; }
+  .admin-tab-btn{
+    flex:1; background: var(--paper-warm); border:1px solid var(--paper-line); padding:8px 10px;
+    font-size:12px; font-weight:600; cursor:pointer; border-radius:6px; color: var(--ink-soft);
+    text-align:center; transition: all 0.2s ease;
+  }
+  .admin-tab-btn.active{
+    background: var(--lacquer); color:#fff; border-color: var(--lacquer);
+    box-shadow: 0 2px 6px rgba(184, 41, 35, 0.25);
+  }
+
+  .photo-slug-wrap{ display:none; align-items:center; gap:6px; margin-top:4px; }
+  .photo-slug-label{ font-size:11px; color: var(--ink-soft); }
+  .photo-slug-badge{
+    font-family: var(--font-mono); font-size:11px; background: var(--paper-warm);
+    border:1px solid var(--paper-line); padding:2px 7px; border-radius:4px;
+    color: var(--ink); word-break:break-all;
+  }
+
+  .modal-sync-bar{
+    display:none; margin-top:14px; padding:10px 12px; border-radius:6px;
+    background: var(--paper-warm); border:1px solid var(--paper-line);
+  }
+  .modal-sync-text{ font-size:12px; font-weight:500; color: var(--ink); display:flex; align-items:center; gap:6px; }
+  .modal-sync-progress{
+    width:100%; height:5px; background: var(--paper-line); border-radius:3px;
+    overflow:hidden; margin-top:8px; position:relative;
+  }
+  .modal-sync-progress-fill{
+    height:100%; background: var(--lacquer); width:0%; border-radius:3px;
+    transition: width 0.3s ease;
+  }
+  .modal-sync-error{
+    display:none; margin-top:12px; padding:10px 12px; border-radius:6px;
+    background:#fde8e8; border:1px solid #f8b4b4; color:#9b1c1c; font-size:12px;
+  }
+  .modal-sync-error .retry-btn{
+    margin-top:6px; background:#c81e1e; color:#fff; border:none; padding:4px 10px;
+    border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;
+  }
+
   /* ============ RESPONSIVE BREAKPOINTS ============ */
   @media (min-width: 769px){
     .fab-container{ display: none !important; }
@@ -1120,60 +1162,97 @@
 <div class="modal-overlay" id="loginModal" onclick="if(event.target===this)closeLoginModal()">
   <div class="modal-box">
     <div class="modal-header-row">
-      <h2>Cấu hình Admin (GitHub Sync)</h2>
+      <h2>Cấu hình Quản trị viên (Admin Sync)</h2>
       <button class="btn-close-modal" onclick="closeLoginModal()" aria-label="Đóng">✕</button>
     </div>
-    <div class="security-tip">
-      <strong>Lưu ý bảo mật:</strong>
-      <ul>
-        <li>Nên dùng <b>Fine-grained Personal Access Token</b> chỉ cấp quyền <code>Contents: Read and write</code> cho riêng repo này.</li>
-        <li>Token chỉ lưu trong phiên làm việc (<code>sessionStorage</code>) và tự xóa khi đóng trình duyệt.</li>
-      </ul>
+
+    <div class="admin-tabs">
+      <button type="button" class="admin-tab-btn active" id="tabWorkerBtn" onclick="switchAdminTab('worker')">
+        ⚡ Cloudflare Worker (Khuyên dùng)
+      </button>
+      <button type="button" class="admin-tab-btn" id="tabDirectBtn" onclick="switchAdminTab('github_pat')">
+        🔑 GitHub PAT (Dự phòng)
+      </button>
     </div>
-    <p class="modal-note">Nhập Personal Access Token GitHub của bạn để kích hoạt quyền quản trị.</p>
-    <div class="form-group">
-      <label>GitHub Personal Access Token</label>
-      <input type="password" id="ghToken" placeholder="ghp_... hoặc github_pat_..." autocomplete="off">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>GitHub Owner</label>
-        <input type="text" id="ghOwner" placeholder="luongtien06">
+
+    <!-- PANEL 1: CLOUDFLARE WORKER -->
+    <div id="panelWorkerAuth">
+      <div class="security-tip">
+        <strong>Bảo mật cao nhất:</strong>
+        <ul>
+          <li>GitHub PAT được bảo vệ an toàn trong Cloudflare Secrets, không bao giờ lộ ra trình duyệt.</li>
+          <li>Đồng bộ nguyên khối (Atomic Git Data API) cả ảnh và data.json trong 1 commit duy nhất.</li>
+        </ul>
       </div>
       <div class="form-group">
-        <label>GitHub Repository</label>
-        <input type="text" id="ghRepo" placeholder="Family_Luong">
+        <label>Địa chỉ Cloudflare Worker API *</label>
+        <input type="url" id="cfWorkerUrl" placeholder="https://family-luong-sync-worker.<subdomain>.workers.dev" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu Quản trị viên (ADMIN_SECRET) *</label>
+        <input type="password" id="cfAdminSecret" placeholder="Nhập mật khẩu đã cấu hình trong Worker Secrets" autocomplete="off">
       </div>
     </div>
+
+    <!-- PANEL 2: GITHUB PAT TRỰC TIẾP -->
+    <div id="panelDirectAuth" style="display:none;">
+      <div class="security-tip">
+        <strong>Chế độ dự phòng:</strong>
+        <ul>
+          <li>Dùng khi chưa triển khai Cloudflare Worker. Token chỉ lưu trong phiên (sessionStorage).</li>
+          <li>Nên dùng Fine-grained Token với quyền: Contents (Read & write), Metadata (Read).</li>
+        </ul>
+      </div>
+      <div class="form-group">
+        <label>GitHub Personal Access Token *</label>
+        <input type="password" id="ghToken" placeholder="ghp_... hoặc github_pat_..." autocomplete="off">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>GitHub Owner</label>
+          <input type="text" id="ghOwner" placeholder="luongtien06">
+        </div>
+        <div class="form-group">
+          <label>GitHub Repository</label>
+          <input type="text" id="ghRepo" placeholder="Family_Luong">
+        </div>
+      </div>
+    </div>
+
     <p id="loginError" class="error-text"></p>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeLoginModal()">Hủy</button>
+      <button class="btn btn-focus" type="button" onclick="testAdminConnection()">Kiểm tra kết nối</button>
       <button class="btn btn-save" onclick="loginAdmin()">Xác nhận</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL ADD/EDIT MEMBER -->
-<div class="modal-overlay" id="memberModal" onclick="if(event.target===this)closeModal()">
+<div class="modal-overlay" id="memberModal" onclick="if(event.target===this && !isSyncingMember)closeModal()">
   <div class="modal-box">
     <div class="modal-header-row">
       <h2 id="modalTitle">Thêm thành viên</h2>
-      <button class="btn-close-modal" onclick="closeModal()" aria-label="Đóng">✕</button>
+      <button class="btn-close-modal" id="btnMemberCloseModal" onclick="if(!isSyncingMember)closeModal()" aria-label="Đóng">✕</button>
     </div>
     <div class="form-group">
       <label>Họ và tên *</label>
-      <input type="text" id="mName" placeholder="...">
+      <input type="text" id="mName" placeholder="..." oninput="handleMemberNameInput()">
     </div>
     <div class="form-group">
       <label>Ảnh đại diện</label>
       <div class="photo-upload-row">
         <div id="mPhotoPreview" class="photo-preview">👤</div>
         <div class="photo-upload-actions">
-          <label class="btn btn-import" style="cursor:pointer;">
-            <span class="ic">📷</span><span class="label">Chọn ảnh</span>
+          <label class="btn btn-import" style="cursor:pointer;" id="labelPickPhoto">
+            <span class="ic">📷</span><span class="label" id="labelPickPhotoText">Chọn ảnh</span>
             <input type="file" id="mPhotoInput" accept="image/*" onchange="handlePhotoSelect(this)">
           </label>
           <button type="button" class="btn btn-cancel" id="btnRemovePhoto" onclick="removePhoto()" style="display:none;">Xóa ảnh</button>
+          <div id="mPhotoSlugWrap" class="photo-slug-wrap">
+            <span class="photo-slug-label">Tên tệp:</span>
+            <span id="mPhotoSlugBadge" class="photo-slug-badge"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1202,18 +1281,22 @@
     </div>
     <div class="form-group">
       <label>Vợ / Chồng</label>
-      <input type="text" id="mSpouse" placeholder="...">
+      <input type="text" id="mSpouse" placeholder="..." oninput="handleSpouseNameInput()">
     </div>
     <div class="form-group">
       <label>Ảnh đại diện Vợ / Chồng</label>
       <div class="photo-upload-row">
         <div id="mSpousePhotoPreview" class="photo-preview">👤</div>
         <div class="photo-upload-actions">
-          <label class="btn btn-import" style="cursor:pointer;">
-            <span class="ic">📷</span><span class="label">Chọn ảnh Vợ/Chồng</span>
+          <label class="btn btn-import" style="cursor:pointer;" id="labelPickSpousePhoto">
+            <span class="ic">📷</span><span class="label" id="labelPickSpousePhotoText">Chọn ảnh Vợ/Chồng</span>
             <input type="file" id="mSpousePhotoInput" accept="image/*" onchange="handleSpousePhotoSelect(this)">
           </label>
           <button type="button" class="btn btn-cancel" id="btnRemoveSpousePhoto" onclick="removeSpousePhoto()" style="display:none;">Xóa ảnh</button>
+          <div id="mSpousePhotoSlugWrap" class="photo-slug-wrap">
+            <span class="photo-slug-label">Tên tệp:</span>
+            <span id="mSpousePhotoSlugBadge" class="photo-slug-badge"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1229,10 +1312,18 @@
       <label>Cha / Mẹ</label>
       <select id="mParentId"><option value="">-- Tổ tiên (Gốc) --</option></select>
     </div>
+
+    <!-- Thanh tiến trình đồng bộ trong Modal -->
+    <div id="memberSyncStatusBox" class="modal-sync-bar">
+      <div id="memberSyncStatusText" class="modal-sync-text">🔄 Đang đồng bộ lên GitHub...</div>
+      <div class="modal-sync-progress"><div id="memberSyncProgressBar" class="modal-sync-progress-fill"></div></div>
+    </div>
+    <div id="memberSyncErrorBox" class="modal-sync-error"></div>
+
     <div class="modal-actions">
-      <button class="btn btn-cancel" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-cancel" id="btnMemberCancel" onclick="if(!isSyncingMember)closeModal()">Hủy</button>
       <button class="btn btn-delete admin-only" id="btnDelete" onclick="deleteMember()">Xóa</button>
-      <button class="btn btn-save" onclick="saveMember()">Lưu</button>
+      <button class="btn btn-save" id="btnSaveMember" onclick="saveMember()">Lưu</button>
     </div>
   </div>
 </div>
@@ -1263,17 +1354,98 @@
   let editingId = null;
   let detailId = null;
   let zoomLevel = 1;
-  let fileSha = null;
-  let currentPhotoData = '';
-  let currentSpousePhotoData = '';
+  let currentCommitSha = '';
+
+  // ==========================================
+  // QUẢN LÝ ẢNH THÀNH VIÊN THEO TÊN TỆP
+  // ==========================================
+  const DEFAULT_AVATAR = 'assets/members/default-avatar.svg';
+
+  let currentPhotoFileName = '';
+  let currentPhotoBase64 = '';
+  let oldPhotoFileName = '';
+
+  let currentSpousePhotoFileName = '';
+  let currentSpousePhotoBase64 = '';
+  let oldSpousePhotoFileName = '';
+
+  const localPhotoCache = new Map();
+  let isSyncingMember = false;
+
+  function removeVietnameseTones(str) {
+    if (!str) return '';
+    return String(str)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .toLowerCase()
+      .trim();
+  }
+
+  function getPhotoUrl(photoName) {
+    if (!photoName || typeof photoName !== 'string') return '';
+    photoName = photoName.trim();
+    if (!photoName) return '';
+    if (photoName.startsWith('data:') || photoName.startsWith('http://') || photoName.startsWith('https://')) {
+      return photoName;
+    }
+    if (localPhotoCache.has(photoName)) {
+      return localPhotoCache.get(photoName);
+    }
+    const stored = localStorage.getItem('family_photo_' + photoName);
+    if (stored) return stored;
+
+    let path = photoName.startsWith('assets/members/') ? photoName : `assets/members/${photoName}`;
+    if (currentCommitSha) {
+      path += (path.includes('?') ? '&' : '?') + 'v=' + currentCommitSha;
+    }
+    return path;
+  }
+
+  function createPhotoSlug(name, id, isSpouse = false, ext = '.jpg') {
+    let cleanName = (name || '').replace(/\(.*?\)/g, '').trim();
+    let slug = removeVietnameseTones(cleanName)
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    if (!slug) {
+      slug = isSpouse ? `spouse-${id || 'new'}` : `thanh-vien-${id || 'new'}`;
+    }
+
+    let candidate = `${slug}${ext}`;
+
+    const isUsedByOther = members.some(m => {
+      if (id && m.id === id) return false;
+      return (m.photo === candidate || m.Image === candidate || m.spousePhoto === candidate);
+    });
+
+    if (isUsedByOther) {
+      candidate = `${slug}-${id || Date.now()}${ext}`;
+    }
+
+    return candidate;
+  }
 
   // Quản lý thu gọn nhánh, tiêu điểm và trạng thái dữ liệu
   let collapsedNodeIds = new Set();
   let focusMemberId = null;
   let isLoadingData = false;
 
-  let ghConfig = null;
-  try { ghConfig = JSON.parse(sessionStorage.getItem('ghAdminConfig')) || null; } catch (e) { ghConfig = null; }
+  // Cấu hình Quản trị viên (Hỗ trợ 2 chế độ: 'worker' hoặc 'github_pat')
+  let adminAuth = { mode: null };
+  try {
+    const savedAuth = JSON.parse(sessionStorage.getItem('familyAdminConfig'));
+    if (savedAuth && (savedAuth.workerUrl || savedAuth.token)) {
+      adminAuth = savedAuth;
+    } else {
+      const legacyGh = JSON.parse(sessionStorage.getItem('ghAdminConfig'));
+      if (legacyGh && legacyGh.token) {
+        adminAuth = { mode: 'github_pat', ...legacyGh };
+      }
+    }
+  } catch (e) { adminAuth = { mode: null }; }
+
+  let activeAuthTab = 'worker';
 
   async function init() {
     enableDragPan();
@@ -1304,7 +1476,6 @@
   function initTreeViewport() {
     const isMobile = window.innerWidth <= 768;
     if (isMobile) {
-      // Trên điện thoại: Đặt tỉ lệ đọc rõ chữ (0.8) và căn giữa ngay vào Cụ tổ Đời I
       applyZoom(0.8, false);
       centerOnRoot();
     } else {
@@ -1312,7 +1483,6 @@
     }
   }
 
-  // Căn khung nhìn vào thẻ Cụ tổ gốc
   function centerOnRoot() {
     const area = document.getElementById('treeArea');
     if (!area) return;
@@ -1347,14 +1517,58 @@
   }
 
   function isAdmin() {
-    return !!(ghConfig && ghConfig.token && ghConfig.owner && ghConfig.repo);
+    if (!adminAuth) return false;
+    if (adminAuth.mode === 'worker') {
+      return !!(adminAuth.workerUrl && adminAuth.adminSecret);
+    }
+    if (adminAuth.mode === 'github_pat') {
+      return !!(adminAuth.token && adminAuth.owner && adminAuth.repo);
+    }
+    return false;
+  }
+
+  function switchAdminTab(mode) {
+    activeAuthTab = mode;
+    const tabWorkerBtn = document.getElementById('tabWorkerBtn');
+    const tabDirectBtn = document.getElementById('tabDirectBtn');
+    const panelWorker = document.getElementById('panelWorkerAuth');
+    const panelDirect = document.getElementById('panelDirectAuth');
+    const err = document.getElementById('loginError');
+    if (err) err.textContent = '';
+
+    if (mode === 'worker') {
+      tabWorkerBtn?.classList.add('active');
+      tabDirectBtn?.classList.remove('active');
+      if (panelWorker) panelWorker.style.display = 'block';
+      if (panelDirect) panelDirect.style.display = 'none';
+    } else {
+      tabWorkerBtn?.classList.remove('active');
+      tabDirectBtn?.classList.add('active');
+      if (panelWorker) panelWorker.style.display = 'none';
+      if (panelDirect) panelDirect.style.display = 'block';
+    }
   }
 
   function openLoginModal() {
-    document.getElementById('ghToken').value = ghConfig?.token || '';
-    document.getElementById('ghOwner').value = ghConfig?.owner || 'luongtien06';
-    document.getElementById('ghRepo').value = ghConfig?.repo || 'Family_Luong';
-    document.getElementById('loginError').textContent = '';
+    const err = document.getElementById('loginError');
+    if (err) err.textContent = '';
+
+    if (adminAuth.mode === 'github_pat') {
+      switchAdminTab('github_pat');
+      const tokenInput = document.getElementById('ghToken');
+      const ownerInput = document.getElementById('ghOwner');
+      const repoInput = document.getElementById('ghRepo');
+      if (tokenInput) tokenInput.value = adminAuth.token || '';
+      if (ownerInput) ownerInput.value = adminAuth.owner || 'luongtien06';
+      if (repoInput) repoInput.value = adminAuth.repo || 'Family_Luong';
+    } else {
+      switchAdminTab('worker');
+      const workerUrlInput = document.getElementById('cfWorkerUrl');
+      const secretInput = document.getElementById('cfAdminSecret');
+      if (workerUrlInput) workerUrlInput.value = adminAuth.workerUrl || '';
+      if (secretInput) secretInput.value = adminAuth.adminSecret || '';
+    }
+
     document.getElementById('loginModal').style.display = 'flex';
   }
 
@@ -1374,35 +1588,124 @@
     if (modal) modal.style.display = 'none';
   }
 
-  function loginAdmin() {
-    const token = document.getElementById('ghToken').value.trim();
-    const owner = document.getElementById('ghOwner').value.trim();
-    const repo = document.getElementById('ghRepo').value.trim();
+  async function testAdminConnection() {
+    const err = document.getElementById('loginError');
+    err.textContent = '⏳ Đang kiểm tra kết nối...';
+    err.style.color = 'var(--gold)';
 
-    if (!token || !owner || !repo) {
-      document.getElementById('loginError').textContent = 'Vui lòng nhập đủ thông tin!';
-      return;
+    if (activeAuthTab === 'worker') {
+      const url = (document.getElementById('cfWorkerUrl')?.value || '').trim().replace(/\/+$/, '');
+      const secret = (document.getElementById('cfAdminSecret')?.value || '').trim();
+      if (!url || !secret) {
+        err.textContent = 'Vui lòng nhập Địa chỉ Worker và Mật khẩu!';
+        err.style.color = '#b3261e';
+        return;
+      }
+      try {
+        const res = await fetch(`${url}/api/verify`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${secret}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.valid) {
+          err.textContent = '✅ Kết nối Cloudflare Worker thành công!';
+          err.style.color = '#2e7d32';
+        } else {
+          err.textContent = `❌ ${data.message || 'Xác thực thất bại (mật khẩu không đúng)!'}`;
+          err.style.color = '#b3261e';
+        }
+      } catch (e) {
+        err.textContent = `❌ Không thể kết nối tới Worker: ${e.message}`;
+        err.style.color = '#b3261e';
+      }
+    } else {
+      const token = (document.getElementById('ghToken')?.value || '').trim();
+      const owner = (document.getElementById('ghOwner')?.value || 'luongtien06').trim();
+      const repo = (document.getElementById('ghRepo')?.value || 'Family_Luong').trim();
+      if (!token) {
+        err.textContent = 'Vui lòng nhập GitHub Token!';
+        err.style.color = '#b3261e';
+        return;
+      }
+      try {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        if (res.ok) {
+          err.textContent = '✅ Kết nối GitHub Repository thành công!';
+          err.style.color = '#2e7d32';
+        } else {
+          const data = await res.json().catch(() => ({}));
+          err.textContent = `❌ Lỗi kết nối GitHub: ${data.message || res.statusText}`;
+          err.style.color = '#b3261e';
+        }
+      } catch (e) {
+        err.textContent = `❌ Lỗi mạng: ${e.message}`;
+        err.style.color = '#b3261e';
+      }
+    }
+  }
+
+  function loginAdmin() {
+    const err = document.getElementById('loginError');
+
+    if (activeAuthTab === 'worker') {
+      const workerUrl = (document.getElementById('cfWorkerUrl')?.value || '').trim().replace(/\/+$/, '');
+      const adminSecret = (document.getElementById('cfAdminSecret')?.value || '').trim();
+
+      if (!workerUrl || !adminSecret) {
+        err.textContent = 'Vui lòng nhập đủ URL Worker và Mật khẩu!';
+        err.style.color = '#b3261e';
+        return;
+      }
+
+      adminAuth = {
+        mode: 'worker',
+        workerUrl,
+        adminSecret
+      };
+    } else {
+      const token = (document.getElementById('ghToken')?.value || '').trim();
+      const owner = (document.getElementById('ghOwner')?.value || 'luongtien06').trim();
+      const repo = (document.getElementById('ghRepo')?.value || 'Family_Luong').trim();
+
+      if (!token || !owner || !repo) {
+        err.textContent = 'Vui lòng nhập đủ Token, Owner và Repo!';
+        err.style.color = '#b3261e';
+        return;
+      }
+
+      adminAuth = {
+        mode: 'github_pat',
+        token,
+        owner,
+        repo
+      };
     }
 
-    ghConfig = { token, owner, repo };
-    sessionStorage.setItem('ghAdminConfig', JSON.stringify(ghConfig));
+    sessionStorage.setItem('familyAdminConfig', JSON.stringify(adminAuth));
     checkAuthUI();
     closeLoginModal();
-    saveData();
+    setSyncStatus('ok', `Đã kích hoạt quyền Admin (${adminAuth.mode === 'worker' ? 'Cloudflare Worker' : 'GitHub PAT'})`);
   }
 
   function logout() {
-    ghConfig = null;
+    adminAuth = { mode: null };
+    sessionStorage.removeItem('familyAdminConfig');
     sessionStorage.removeItem('ghAdminConfig');
-    const tokenInput = document.getElementById('ghToken');
-    if (tokenInput) tokenInput.value = '';
     checkAuthUI();
     renderTree();
-    loadData().then(() => renderTree());
+    setSyncStatus('ok', 'Đã đăng xuất quyền Quản trị viên');
   }
 
   // ==========================================
-  // ĐỒNG BỘ DỮ LIỆU
+  // ĐỒNG BỘ DỮ LIỆU & GITHUB GIT DATA API
   // ==========================================
   function setSyncStatus(state, msg) {
     const el = document.getElementById('syncStatus');
@@ -1412,13 +1715,9 @@
     else if (state === 'error') { el.textContent = '⚠️ ' + msg; el.className = 'sync-status error'; }
   }
 
-  function utf8ToBase64(str) {
-    return window.btoa(unescape(encodeURIComponent(str)));
-  }
-
   async function loadData() {
     isLoadingData = true;
-    setSyncStatus('syncing', 'Đang tải dữ liệu...');
+    setSyncStatus('syncing', 'Đang tải dữ liệu gia phả...');
 
     const localTemp = localStorage.getItem('temp_family_data');
     if (localTemp) {
@@ -1434,9 +1733,9 @@
       if (res.ok) {
         const data = await res.json();
         members = data.members || [];
-        nextId = data.nextId || 1;
+        nextId = data.nextId || (Math.max(...members.map(m => m.id || 0), 0) + 1);
         localStorage.setItem('temp_family_data', JSON.stringify({ members, nextId }));
-        setSyncStatus('ok', 'Đã tải dữ liệu mới nhất');
+        setSyncStatus('ok', `Đã tải ${members.length} thành viên`);
       } else {
         if (!localTemp) setSyncStatus('ok', 'Khởi tạo cây gia phả mới');
       }
@@ -1451,53 +1750,249 @@
     }
   }
 
-  async function saveData() {
+  // Master Atomic Sync: Thực thi đồng bộ nguyên khối ảnh và data.json qua Git Data API
+  async function executeAtomicSync(payload, onProgress) {
     if (!isAdmin()) {
-      alert('Bạn không có quyền thực hiện thao tác này!');
-      return;
+      throw new Error('Chưa đăng nhập quyền Quản trị viên!');
     }
-    setSyncStatus('syncing', 'Đang lưu vào GitHub...');
-    localStorage.setItem('temp_family_data', JSON.stringify({ members, nextId }));
 
-    try {
-      const getUrl = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data.json`;
+    if (adminAuth.mode === 'worker') {
+      return await syncViaWorker(payload, onProgress);
+    } else if (adminAuth.mode === 'github_pat') {
+      return await syncViaGitHubGitDataApi(payload, onProgress);
+    } else {
+      throw new Error('Chế độ xác thực không hợp lệ!');
+    }
+  }
 
-      const getRes = await fetch(getUrl, {
-        headers: {
-          'Authorization': `Bearer ${ghConfig.token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      if (getRes.ok) {
-        const fileInfo = await getRes.json();
-        fileSha = fileInfo.sha;
-      }
+  async function syncViaWorker(payload, onProgress) {
+    if (onProgress) onProgress('Đang gửi dữ liệu đến Cloudflare Worker...', 25);
+    const workerUrl = (adminAuth.workerUrl || '').replace(/\/+$/, '');
+    const res = await fetch(`${workerUrl}/api/sync`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${adminAuth.adminSecret}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
 
-      const payload = JSON.stringify({ members, nextId }, null, 2);
-      const contentBase64 = utf8ToBase64(payload);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || `Lỗi Cloudflare Worker: HTTP ${res.status}`);
+    }
 
-      const putRes = await fetch(getUrl, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${ghConfig.token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/vnd.github.v3+json'
-        },
+    if (onProgress) onProgress('Đồng bộ nguyên khối qua Worker thành công!', 100);
+    return data;
+  }
+
+  async function syncViaGitHubGitDataApi(payload, onProgress) {
+    const { token, owner, repo } = adminAuth;
+    const branch = 'main';
+    const apiBase = `https://api.github.com/repos/${owner}/${repo}`;
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    };
+
+    // 1. Lấy SHA commit hiện tại
+    if (onProgress) onProgress('Đang đọc trạng thái nhánh main...', 15);
+    const refRes = await fetch(`${apiBase}/git/ref/heads/${branch}`, { headers });
+    if (!refRes.ok) {
+      const err = await refRes.json().catch(() => ({}));
+      throw new Error(`Lỗi đọc nhánh ${branch}: ${err.message || refRes.statusText}`);
+    }
+    const refData = await refRes.json();
+    const currentCommitSha = refData.object.sha;
+
+    // 2. Lấy tree SHA từ commit
+    if (onProgress) onProgress('Đang đọc cây thư mục gốc...', 30);
+    const commitRes = await fetch(`${apiBase}/git/commits/${currentCommitSha}`, { headers });
+    if (!commitRes.ok) {
+      const err = await commitRes.json().catch(() => ({}));
+      throw new Error(`Lỗi đọc commit: ${err.message || commitRes.statusText}`);
+    }
+    const commitData = await commitRes.json();
+    const baseTreeSha = commitData.tree.sha;
+
+    // 3. Tạo blobs cho ảnh mới
+    const treeEntries = [];
+    const totalPhotos = payload.newPhotos?.length || 0;
+    let photoIdx = 0;
+
+    for (const photo of (payload.newPhotos || [])) {
+      photoIdx++;
+      const pct = 30 + Math.round((photoIdx / Math.max(totalPhotos, 1)) * 30);
+      if (onProgress) onProgress(`Đang tạo Git blob cho ảnh ${photo.fileName}...`, pct);
+      const cleanBase64 = photo.contentBase64.includes(',') ? photo.contentBase64.split(',')[1] : photo.contentBase64;
+      const blobRes = await fetch(`${apiBase}/git/blobs`, {
+        method: 'POST',
+        headers,
         body: JSON.stringify({
-          message: 'Cập nhật gia phả từ Admin',
-          content: contentBase64,
-          sha: fileSha || undefined
+          content: cleanBase64,
+          encoding: 'base64'
         })
       });
-
-      if (putRes.ok) {
-        const resData = await putRes.json();
-        fileSha = resData.content.sha;
-        setSyncStatus('ok', 'Đã lưu thành công!');
-      } else {
-        const err = await putRes.json();
-        throw new Error(err.message || 'Lỗi ghi đè file');
+      if (!blobRes.ok) {
+        const err = await blobRes.json().catch(() => ({}));
+        throw new Error(`Lỗi upload ảnh "${photo.fileName}": ${err.message || blobRes.statusText}`);
       }
+      const blobData = await blobRes.json();
+      treeEntries.push({
+        path: `assets/members/${photo.fileName}`,
+        mode: '100644',
+        type: 'blob',
+        sha: blobData.sha
+      });
+    }
+
+    // 4. Xóa ảnh cũ không còn tham chiếu bằng sha: null
+    for (const delName of (payload.deletedPhotos || [])) {
+      const isReferenced = payload.members.some(m => m.photo === delName || m.Image === delName || m.spousePhoto === delName);
+      if (!isReferenced) {
+        treeEntries.push({
+          path: `assets/members/${delName}`,
+          mode: '100644',
+          type: 'blob',
+          sha: null
+        });
+      }
+    }
+
+    // 5. Tạo blob cho data.json
+    if (onProgress) onProgress('Đang tạo Git blob cho data.json...', 70);
+    const jsonString = JSON.stringify({ members: payload.members, nextId: payload.nextId }, null, 2);
+    const dataBlobRes = await fetch(`${apiBase}/git/blobs`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        content: jsonString,
+        encoding: 'utf-8'
+      })
+    });
+    if (!dataBlobRes.ok) {
+      const err = await dataBlobRes.json().catch(() => ({}));
+      throw new Error(`Lỗi tạo blob data.json: ${err.message || dataBlobRes.statusText}`);
+    }
+    const dataBlobData = await dataBlobRes.json();
+    treeEntries.push({
+      path: 'data.json',
+      mode: '100644',
+      type: 'blob',
+      sha: dataBlobData.sha
+    });
+
+    // 6. Tạo Tree mới
+    if (onProgress) onProgress('Đang tạo Git Tree nguyên khối...', 80);
+    const treeRes = await fetch(`${apiBase}/git/trees`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        base_tree: baseTreeSha,
+        tree: treeEntries
+      })
+    });
+    if (!treeRes.ok) {
+      const err = await treeRes.json().catch(() => ({}));
+      throw new Error(`Lỗi tạo Git Tree: ${err.message || treeRes.statusText}`);
+    }
+    const treeData = await treeRes.json();
+
+    // 7. Tạo Commit mới
+    if (onProgress) onProgress('Đang tạo Git Commit...', 90);
+    const newCommitRes = await fetch(`${apiBase}/git/commits`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        message: payload.commitMessage || 'Cập nhật cây gia phả và ảnh thành viên từ Admin',
+        tree: treeData.sha,
+        parents: [currentCommitSha]
+      })
+    });
+    if (!newCommitRes.ok) {
+      const err = await newCommitRes.json().catch(() => ({}));
+      throw new Error(`Lỗi tạo Git Commit: ${err.message || newCommitRes.statusText}`);
+    }
+    const newCommitData = await newCommitRes.json();
+
+    // 8. Cập nhật nhánh main
+    if (onProgress) onProgress('Đang cập nhật nhánh main...', 95);
+    const updateRefRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        sha: newCommitData.sha,
+        force: false
+      })
+    });
+    if (!updateRefRes.ok) {
+      if (updateRefRes.status === 409 || updateRefRes.status === 422) {
+        throw new Error('Xung đột: Repository đã có commit mới hơn. Vui lòng tải lại trang và thử lại.');
+      }
+      const err = await updateRefRes.json().catch(() => ({}));
+      throw new Error(`Lỗi cập nhật nhánh: ${err.message || updateRefRes.statusText}`);
+    }
+
+    if (onProgress) onProgress('Đồng bộ Git Data API thành công!', 100);
+    return {
+      success: true,
+      commitSha: newCommitData.sha.substring(0, 7),
+      fullCommitSha: newCommitData.sha
+    };
+  }
+
+  // Tự động kiểm tra trạng thái triển khai của GitHub Pages
+  let pagesPollTimer = null;
+  function monitorPagesDeployment(commitSha) {
+    if (pagesPollTimer) clearTimeout(pagesPollTimer);
+    let attempts = 0;
+    const maxAttempts = 6;
+
+    async function poll() {
+      attempts++;
+      try {
+        if (adminAuth.mode === 'worker') {
+          const workerUrl = (adminAuth.workerUrl || '').replace(/\/+$/, '');
+          const res = await fetch(`${workerUrl}/api/status`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.pagesStatus?.status === 'built') {
+              setSyncStatus('ok', `Website đã hoàn tất triển khai (Commit ${currentCommitSha || ''})`);
+              return;
+            } else if (data.pagesStatus?.status === 'building') {
+              setSyncStatus('syncing', `GitHub Pages đang build & deploy (${attempts * 15}s)...`);
+            }
+          }
+        }
+      } catch (e) {}
+
+      if (attempts < maxAttempts) {
+        pagesPollTimer = setTimeout(poll, 15000);
+      } else {
+        setSyncStatus('ok', `Dữ liệu và ảnh đã lưu an toàn trên GitHub (Commit ${currentCommitSha || ''})`);
+      }
+    }
+
+    pagesPollTimer = setTimeout(poll, 12000);
+  }
+
+  async function saveData() {
+    if (!isAdmin()) {
+      localStorage.setItem('temp_family_data', JSON.stringify({ members, nextId }));
+      return;
+    }
+    setSyncStatus('syncing', 'Đang đồng bộ dữ liệu lên GitHub...');
+    try {
+      const res = await executeAtomicSync({
+        members,
+        nextId,
+        newPhotos: [],
+        deletedPhotos: [],
+        commitMessage: 'Cập nhật dữ liệu gia phả từ Admin'
+      }, (msg) => setSyncStatus('syncing', msg));
+      if (res.commitSha) currentCommitSha = res.commitSha;
+      setSyncStatus('ok', `Đã lưu commit ${res.commitSha || ''}`);
     } catch (e) {
       setSyncStatus('error', 'Lỗi lưu dữ liệu: ' + e.message);
       alert('Lỗi lưu GitHub: ' + e.message);
@@ -1654,14 +2149,16 @@
 
     const genDisplay = ROMAN[m.generation] || m.generation;
     const isDeceased = !!(m.dod && String(m.dod).trim());
-    const memberAvatarHtml = m.photo
-      ? `<div class="node-avatar member-avatar" style="background-image:url('${m.photo}')"></div>`
+    const photoUrl = getPhotoUrl(m.photo || m.Image);
+    const memberAvatarHtml = photoUrl
+      ? `<div class="node-avatar member-avatar" style="background-image:url('${photoUrl}'), url('${DEFAULT_AVATAR}')"></div>`
       : `<div class="node-avatar member-avatar">👤</div>`;
     let avatarsHtml = memberAvatarHtml;
     if (m.spouse) {
       const spouseBorderClass = m.gender === 'male' ? 'female-border' : 'male-border';
-      const spouseAvatarHtml = m.spousePhoto
-        ? `<div class="node-avatar ${spouseBorderClass}" style="background-image:url('${m.spousePhoto}')"></div>`
+      const spousePhotoUrl = getPhotoUrl(m.spousePhoto);
+      const spouseAvatarHtml = spousePhotoUrl
+        ? `<div class="node-avatar ${spouseBorderClass}" style="background-image:url('${spousePhotoUrl}'), url('${DEFAULT_AVATAR}')"></div>`
         : `<div class="node-avatar ${spouseBorderClass}">👤</div>`;
       avatarsHtml = `<div class="node-avatars-wrap">${memberAvatarHtml}<span class="avatar-heart">♥</span>${spouseAvatarHtml}</div>`;
     }
@@ -1934,8 +2431,9 @@
       const item = document.createElement('div');
       item.className = 'search-item';
       const borderClass = m.gender === 'female' ? 'female-border' : 'male-border';
-      const avatarHtml = m.photo
-        ? `<div class="search-item-avatar ${borderClass}" style="background-image:url('${m.photo}')"></div>`
+      const photoUrl = getPhotoUrl(m.photo || m.Image);
+      const avatarHtml = photoUrl
+        ? `<div class="search-item-avatar ${borderClass}" style="background-image:url('${photoUrl}'), url('${DEFAULT_AVATAR}')"></div>`
         : `<div class="search-item-avatar ${borderClass}">👤</div>`;
       const genDisp = ROMAN[m.generation] || m.generation;
       const years = (m.dob || '?') + ' - ' + (m.dod || 'nay');
@@ -2196,14 +2694,14 @@
   }
 
   // ==========================================
-  // ẢNH ĐẠI DIỆN
+  // ẢNH ĐẠI DIỆN & QUẢN LÝ TỆP ẢNH
   // ==========================================
   function resizeImageFile(file, onDone) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_SIZE = 240;
+        const MAX_SIZE = 360;
         let { width, height } = img;
         if (width > height) {
           if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
@@ -2213,69 +2711,216 @@
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        onDone(canvas.toDataURL('image/jpeg', 0.75));
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        onDone(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = () => {
+        alert('Không thể đọc tệp hình ảnh này. Vui lòng chọn tệp khác!');
       };
       img.src = e.target.result;
+    };
+    reader.onerror = () => {
+      alert('Lỗi đọc tệp từ thiết bị!');
     };
     reader.readAsDataURL(file);
   }
 
-  function setPreview(previewId, removeBtnId, dataUrl) {
+  function setPreview(previewId, removeBtnId, photoRef) {
     const el = document.getElementById(previewId);
     const removeBtn = document.getElementById(removeBtnId);
-    if (dataUrl) {
-      el.style.backgroundImage = `url(${dataUrl})`;
+    if (!el) return;
+    const url = getPhotoUrl(photoRef);
+    if (url) {
+      el.style.backgroundImage = `url('${url}')`;
       el.textContent = '';
-      removeBtn.style.display = 'inline-flex';
+      if (removeBtn) removeBtn.style.display = 'inline-flex';
     } else {
       el.style.backgroundImage = '';
       el.textContent = '👤';
-      removeBtn.style.display = 'none';
+      if (removeBtn) removeBtn.style.display = 'none';
     }
   }
 
   function updatePhotoPreview(d) { setPreview('mPhotoPreview', 'btnRemovePhoto', d); }
   function updateSpousePhotoPreview(d) { setPreview('mSpousePhotoPreview', 'btnRemoveSpousePhoto', d); }
 
+  function updateSlugBadges() {
+    const memberName = document.getElementById('mName').value.trim();
+    const spouseName = document.getElementById('mSpouse').value.trim();
+    const targetId = editingId || nextId;
+
+    // Member photo badge
+    const photoBadge = document.getElementById('mPhotoSlugBadge');
+    const photoWrap = document.getElementById('mPhotoSlugWrap');
+    const pickText = document.getElementById('labelPickPhotoText');
+    if (currentPhotoFileName) {
+      if (photoBadge) photoBadge.textContent = currentPhotoFileName;
+      if (photoWrap) photoWrap.style.display = 'inline-flex';
+      if (pickText) pickText.textContent = 'Đổi ảnh';
+    } else {
+      if (photoWrap) photoWrap.style.display = 'none';
+      if (pickText) pickText.textContent = 'Chọn ảnh';
+    }
+
+    // Spouse photo badge
+    const spouseBadge = document.getElementById('mSpousePhotoSlugBadge');
+    const spouseWrap = document.getElementById('mSpousePhotoSlugWrap');
+    const spousePickText = document.getElementById('labelPickSpousePhotoText');
+    if (currentSpousePhotoFileName) {
+      if (spouseBadge) spouseBadge.textContent = currentSpousePhotoFileName;
+      if (spouseWrap) spouseWrap.style.display = 'inline-flex';
+      if (spousePickText) spousePickText.textContent = 'Đổi ảnh';
+    } else {
+      if (spouseWrap) spouseWrap.style.display = 'none';
+      if (spousePickText) spousePickText.textContent = 'Chọn ảnh Vợ/Chồng';
+    }
+  }
+
+  function handleMemberNameInput() {
+    const name = document.getElementById('mName').value.trim();
+    if (currentPhotoBase64 && name) {
+      currentPhotoFileName = createPhotoSlug(name, editingId || nextId, false, '.jpg');
+      updateSlugBadges();
+    }
+  }
+
+  function handleSpouseNameInput() {
+    const spouse = document.getElementById('mSpouse').value.trim();
+    if (currentSpousePhotoBase64 && spouse) {
+      currentSpousePhotoFileName = createPhotoSlug(spouse, editingId || nextId, true, '.jpg');
+      updateSlugBadges();
+    }
+  }
+
+  function showMemberSyncProgress(msg, percent) {
+    const box = document.getElementById('memberSyncStatusBox');
+    const text = document.getElementById('memberSyncStatusText');
+    const bar = document.getElementById('memberSyncProgressBar');
+    const errBox = document.getElementById('memberSyncErrorBox');
+    if (errBox) errBox.style.display = 'none';
+    if (box) box.style.display = 'block';
+    if (text) text.innerHTML = `<span class="ic">🔄</span> ${msg}`;
+    if (bar) bar.style.width = `${Math.min(100, Math.max(5, percent))}%`;
+
+    const saveBtn = document.getElementById('btnSaveMember');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = 'Đang lưu...';
+    }
+    const cancelBtn = document.getElementById('btnMemberCancel');
+    if (cancelBtn) cancelBtn.disabled = true;
+  }
+
+  function showMemberSyncError(errMessage) {
+    const box = document.getElementById('memberSyncStatusBox');
+    const errBox = document.getElementById('memberSyncErrorBox');
+    if (box) box.style.display = 'none';
+    if (errBox) {
+      errBox.innerHTML = `
+        <div><strong>⚠️ Lỗi đồng bộ:</strong> ${escapeHTML(errMessage)}</div>
+        <div style="margin-top:6px;">
+          <button type="button" class="retry-btn" onclick="saveMember()">🔄 Thử lại</button>
+        </div>
+      `;
+      errBox.style.display = 'block';
+    }
+
+    const saveBtn = document.getElementById('btnSaveMember');
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = 'Lưu';
+    }
+    const cancelBtn = document.getElementById('btnMemberCancel');
+    if (cancelBtn) cancelBtn.disabled = false;
+    isSyncingMember = false;
+  }
+
+  function hideMemberSyncStatus() {
+    const box = document.getElementById('memberSyncStatusBox');
+    const errBox = document.getElementById('memberSyncErrorBox');
+    if (box) box.style.display = 'none';
+    if (errBox) errBox.style.display = 'none';
+    const saveBtn = document.getElementById('btnSaveMember');
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = 'Lưu';
+    }
+    const cancelBtn = document.getElementById('btnMemberCancel');
+    if (cancelBtn) cancelBtn.disabled = false;
+    isSyncingMember = false;
+  }
+
   function handlePhotoSelect(input) {
     const file = input.files[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn một tệp hình ảnh.');
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      alert('Định dạng ảnh không hỗ trợ! Vui lòng chọn tệp ảnh JPG, PNG hoặc WebP.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      alert('Dung lượng tệp quá lớn (> 8MB)! Vui lòng chọn tệp nhỏ hơn.');
       input.value = '';
       return;
     }
     resizeImageFile(file, (dataUrl) => {
-      currentPhotoData = dataUrl;
+      const memberName = document.getElementById('mName').value.trim() || 'thanh-vien';
+      const targetId = editingId || nextId;
+      const filename = createPhotoSlug(memberName, targetId, false, '.jpg');
+
+      currentPhotoFileName = filename;
+      currentPhotoBase64 = dataUrl;
+      localPhotoCache.set(filename, dataUrl);
       updatePhotoPreview(dataUrl);
+      updateSlugBadges();
     });
     input.value = '';
   }
 
   function removePhoto() {
-    currentPhotoData = '';
+    currentPhotoFileName = '';
+    currentPhotoBase64 = '';
     updatePhotoPreview('');
+    updateSlugBadges();
   }
 
   function handleSpousePhotoSelect(input) {
     const file = input.files[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn một tệp hình ảnh.');
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      alert('Định dạng ảnh không hỗ trợ! Vui lòng chọn tệp ảnh JPG, PNG hoặc WebP.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      alert('Dung lượng tệp quá lớn (> 8MB)! Vui lòng chọn tệp nhỏ hơn.');
       input.value = '';
       return;
     }
     resizeImageFile(file, (dataUrl) => {
-      currentSpousePhotoData = dataUrl;
+      const spouseName = document.getElementById('mSpouse').value.trim() || 'vo-chong';
+      const targetId = editingId || nextId;
+      const filename = createPhotoSlug(spouseName, targetId, true, '.jpg');
+
+      currentSpousePhotoFileName = filename;
+      currentSpousePhotoBase64 = dataUrl;
+      localPhotoCache.set(filename, dataUrl);
       updateSpousePhotoPreview(dataUrl);
+      updateSlugBadges();
     });
     input.value = '';
   }
 
   function removeSpousePhoto() {
-    currentSpousePhotoData = '';
+    currentSpousePhotoFileName = '';
+    currentSpousePhotoBase64 = '';
     updateSpousePhotoPreview('');
+    updateSlugBadges();
   }
 
   // ==========================================
@@ -2303,8 +2948,15 @@
   }
 
   function openAddModal() {
-    if (!isAdmin()) { alert("Chỉ Admin mới có quyền thực hiện!"); return; }
+    if (!isAdmin()) {
+      alert("Vui lòng kích hoạt quyền Quản trị viên trước!");
+      openLoginModal();
+      return;
+    }
     editingId = null;
+    isSyncingMember = false;
+    hideMemberSyncStatus();
+
     document.getElementById('modalTitle').textContent = 'Thêm thành viên';
     document.getElementById('mName').value = '';
     document.getElementById('mGender').value = 'male';
@@ -2315,10 +2967,15 @@
     document.getElementById('mOccupation').value = '';
     document.getElementById('mNote').value = '';
     document.getElementById('btnDelete').style.display = 'none';
-    currentPhotoData = '';
+    oldPhotoFileName = '';
+    oldSpousePhotoFileName = '';
+    currentPhotoFileName = '';
+    currentPhotoBase64 = '';
+    currentSpousePhotoFileName = '';
+    currentSpousePhotoBase64 = '';
     updatePhotoPreview('');
-    currentSpousePhotoData = '';
     updateSpousePhotoPreview('');
+    updateSlugBadges();
 
     updateParentSelect();
     document.getElementById('mParentId').onchange = handleParentChange;
@@ -2326,11 +2983,16 @@
   }
 
   function closeModal() {
+    if (isSyncingMember) return;
     document.getElementById('memberModal').style.display = 'none';
   }
 
-  function saveMember() {
-    if (!isAdmin()) return;
+  async function saveMember() {
+    if (!isAdmin()) {
+      alert("Vui lòng kích hoạt quyền Quản trị viên trước!");
+      openLoginModal();
+      return;
+    }
 
     const name = document.getElementById('mName').value.trim();
     if (!name) return alert('Vui lòng nhập Họ và tên!');
@@ -2345,45 +3007,195 @@
     const pVal = document.getElementById('mParentId').value;
     const parentId = pVal ? parseInt(pVal) : null;
 
+    isSyncingMember = true;
+    showMemberSyncProgress('Đang chuẩn bị ảnh & dữ liệu...', 15);
+
+    const newPhotos = [];
+    const deletedPhotos = [];
+    const targetId = editingId || nextId;
+
+    let finalPhotoName = currentPhotoFileName;
+    if (currentPhotoBase64) {
+      finalPhotoName = createPhotoSlug(name, targetId, false, '.jpg');
+      newPhotos.push({
+        fileName: finalPhotoName,
+        contentBase64: currentPhotoBase64
+      });
+      if (oldPhotoFileName && oldPhotoFileName !== finalPhotoName) {
+        deletedPhotos.push(oldPhotoFileName);
+      }
+    } else if (!currentPhotoFileName && oldPhotoFileName) {
+      deletedPhotos.push(oldPhotoFileName);
+    }
+
+    let finalSpousePhotoName = currentSpousePhotoFileName;
+    if (currentSpousePhotoBase64) {
+      finalSpousePhotoName = createPhotoSlug(spouse || 'vo-chong', targetId, true, '.jpg');
+      newPhotos.push({
+        fileName: finalSpousePhotoName,
+        contentBase64: currentSpousePhotoBase64
+      });
+      if (oldSpousePhotoFileName && oldSpousePhotoFileName !== finalSpousePhotoName) {
+        deletedPhotos.push(oldSpousePhotoFileName);
+      }
+    } else if (!currentSpousePhotoFileName && oldSpousePhotoFileName) {
+      deletedPhotos.push(oldSpousePhotoFileName);
+    }
+
+    // Tạo bản sao tạm của members để tính toán
+    let updatedMembers = members.map(m => ({ ...m }));
+    let updatedNextId = nextId;
+
     if (editingId) {
-      let m = members.find(x => x.id === editingId);
-      if (m) {
-        Object.assign(m, { name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData, spousePhoto: currentSpousePhotoData });
+      const idx = updatedMembers.findIndex(m => m.id === editingId);
+      if (idx !== -1) {
+        updatedMembers[idx] = {
+          ...updatedMembers[idx],
+          name, gender, generation, dob, dod, spouse, occupation, note, parentId,
+          photo: finalPhotoName,
+          spousePhoto: finalSpousePhotoName
+        };
       }
     } else {
-      members.push({
-        id: nextId++,
-        name, gender, generation, dob, dod, spouse, occupation, note, parentId, photo: currentPhotoData, spousePhoto: currentSpousePhotoData
+      updatedMembers.push({
+        id: updatedNextId++,
+        name, gender, generation, dob, dod, spouse, occupation, note, parentId,
+        photo: finalPhotoName,
+        spousePhoto: finalSpousePhotoName
       });
       if (parentId && collapsedNodeIds.has(parentId)) {
         collapsedNodeIds.delete(parentId);
       }
     }
 
-    renderTree();
-    closeModal();
-    saveData();
+    try {
+      showMemberSyncProgress('Đang đồng bộ nguyên khối lên GitHub...', 35);
+      const commitMsg = editingId 
+        ? `Cập nhật thành viên: ${name} (ID: ${editingId})`
+        : `Thêm thành viên mới: ${name} (ID: ${targetId})`;
+
+      const result = await executeAtomicSync({
+        members: updatedMembers,
+        nextId: updatedNextId,
+        newPhotos,
+        deletedPhotos,
+        commitMessage: commitMsg
+      }, (msg, pct) => {
+        showMemberSyncProgress(msg, pct);
+      });
+
+      // Áp dụng dữ liệu mới sau khi commit được GitHub chấp nhận
+      members = updatedMembers;
+      nextId = updatedNextId;
+      localStorage.setItem('temp_family_data', JSON.stringify({ members, nextId }));
+
+      // Cập nhật cache ảnh ngay tức thì
+      if (currentPhotoBase64 && finalPhotoName) {
+        localPhotoCache.set(finalPhotoName, currentPhotoBase64);
+      }
+      if (currentSpousePhotoBase64 && finalSpousePhotoName) {
+        localPhotoCache.set(finalSpousePhotoName, currentSpousePhotoBase64);
+      }
+      if (result.commitSha) {
+        currentCommitSha = result.commitSha;
+      }
+
+      showMemberSyncProgress('Đã đồng bộ thành công!', 100);
+      setSyncStatus('ok', `Đã lưu commit ${result.commitSha || ''}. Đang triển khai website...`);
+
+      setTimeout(() => {
+        hideMemberSyncStatus();
+        closeModal();
+        renderTree();
+        if (targetId) panToMember(targetId);
+        monitorPagesDeployment(result.fullCommitSha);
+      }, 500);
+
+    } catch (err) {
+      console.error('Lỗi lưu thành viên:', err);
+      showMemberSyncError(err.message || 'Lỗi không xác định khi đồng bộ với GitHub');
+      setSyncStatus('error', 'Lỗi đồng bộ: ' + (err.message || ''));
+    }
   }
 
-  function deleteMember() {
-    if (!isAdmin()) return;
-    if (!editingId || !confirm('CẢNH BÁO: Xóa người này sẽ xóa toàn bộ con cháu của họ. Bạn có chắc chắn?')) return;
+  async function deleteMember() {
+    if (!isAdmin()) { alert("Chỉ Admin mới có quyền thực hiện!"); return; }
+    if (!editingId) return;
 
-    function removeBranch(id) {
-      const kids = members.filter(m => m.parentId === id).map(m => m.id);
-      members = members.filter(m => m.id !== id);
-      collapsedNodeIds.delete(id);
-      kids.forEach(removeBranch);
+    const target = members.find(m => m.id === editingId);
+    if (!target) return;
+
+    const confirmed = confirm(
+      `CẢNH BÁO: Xóa người này sẽ xóa toàn bộ con cháu của họ trong gia phả!\n` +
+      `Bạn có chắc chắn muốn xóa "${target.name}"?`
+    );
+    if (!confirmed) return;
+
+    isSyncingMember = true;
+    showMemberSyncProgress('Đang chuẩn bị xóa nhánh...', 15);
+
+    const deletedIds = new Set();
+    const candidatePhotoDeletions = [];
+
+    function collectBranch(id) {
+      deletedIds.add(id);
+      const m = members.find(x => x.id === id);
+      if (m) {
+        if (m.photo) candidatePhotoDeletions.push(m.photo);
+        if (m.spousePhoto) candidatePhotoDeletions.push(m.spousePhoto);
+      }
+      members.filter(c => c.parentId === id).forEach(c => collectBranch(c.id));
     }
 
-    if (focusMemberId === editingId) {
-      focusMemberId = null;
-    }
+    collectBranch(editingId);
 
-    removeBranch(editingId);
-    renderTree();
-    closeModal();
-    saveData();
+    const remainingMembers = members.filter(m => !deletedIds.has(m.id));
+
+    // Lọc chỉ xóa những ảnh thực sự không còn ai trong gia phả dùng
+    const finalDeletedPhotos = candidatePhotoDeletions.filter(photoName => {
+      return !remainingMembers.some(m => m.photo === photoName || m.Image === photoName || m.spousePhoto === photoName);
+    });
+
+    try {
+      showMemberSyncProgress('Đang đồng bộ lệnh xóa lên GitHub...', 40);
+      const commitMsg = `Xóa thành viên: ${target.name} (ID: ${editingId}) và nhánh con`;
+
+      const result = await executeAtomicSync({
+        members: remainingMembers,
+        nextId: nextId,
+        newPhotos: [],
+        deletedPhotos: finalDeletedPhotos,
+        commitMessage: commitMsg
+      }, (msg, pct) => {
+        showMemberSyncProgress(msg, pct);
+      });
+
+      members = remainingMembers;
+      deletedIds.forEach(id => collapsedNodeIds.delete(id));
+      if (focusMemberId && deletedIds.has(focusMemberId)) {
+        focusMemberId = null;
+      }
+      localStorage.setItem('temp_family_data', JSON.stringify({ members, nextId }));
+
+      if (result.commitSha) {
+        currentCommitSha = result.commitSha;
+      }
+
+      showMemberSyncProgress('Đã xóa thành công!', 100);
+      setSyncStatus('ok', `Đã lưu commit ${result.commitSha || ''}. Đang triển khai website...`);
+
+      setTimeout(() => {
+        hideMemberSyncStatus();
+        closeModal();
+        renderTree();
+        monitorPagesDeployment(result.fullCommitSha);
+      }, 500);
+
+    } catch (err) {
+      console.error('Lỗi xóa thành viên:', err);
+      showMemberSyncError(err.message || 'Lỗi khi xóa thành viên trên GitHub');
+      setSyncStatus('error', 'Lỗi xóa: ' + (err.message || ''));
+    }
   }
 
   // ==========================================
@@ -2397,10 +3209,13 @@
     document.getElementById('dName').textContent = m.name;
     const isDeceased = !!(m.dod && String(m.dod).trim());
     
-    const coupleHtml = (m.photo || (m.spouse && m.spousePhoto)) ? `
+    const mPhotoUrl = getPhotoUrl(m.photo || m.Image);
+    const mSpousePhotoUrl = getPhotoUrl(m.spousePhoto);
+
+    const coupleHtml = (mPhotoUrl || (m.spouse && mSpousePhotoUrl)) ? `
       <div style="display:flex;justify-content:center;align-items:center;gap:14px;margin-bottom:16px;">
-        ${m.photo ? `<img src="${m.photo}" alt="${escapeHTML(m.name)}" class="detail-avatar">` : ''}
-        ${m.spouse && m.spousePhoto ? `<img src="${m.spousePhoto}" alt="${escapeHTML(m.spouse)}" class="detail-avatar">` : ''}
+        ${mPhotoUrl ? `<img src="${mPhotoUrl}" alt="${escapeHTML(m.name)}" class="detail-avatar" onerror="this.onerror=null; this.src='${DEFAULT_AVATAR}';">` : ''}
+        ${m.spouse && mSpousePhotoUrl ? `<img src="${mSpousePhotoUrl}" alt="${escapeHTML(m.spouse)}" class="detail-avatar" onerror="this.onerror=null; this.src='${DEFAULT_AVATAR}';">` : ''}
       </div>
     ` : '';
 
@@ -2450,14 +3265,20 @@
   }
 
   function editFromDetail() {
-    if (!isAdmin()) { alert("Chỉ Admin mới có quyền sửa!"); return; }
+    if (!isAdmin()) {
+      alert("Vui lòng kích hoạt quyền Quản trị viên trước!");
+      openLoginModal();
+      return;
+    }
     closeDetail();
     editingId = detailId;
+    isSyncingMember = false;
+    hideMemberSyncStatus();
 
     const m = members.find(x => x.id === detailId);
     if (!m) return;
 
-    document.getElementById('modalTitle').textContent = 'Sửa thông tin';
+    document.getElementById('modalTitle').textContent = 'Sửa thông tin: ' + m.name;
     document.getElementById('mName').value = m.name || '';
     document.getElementById('mGender').value = m.gender || 'male';
     document.getElementById('mGeneration').value = m.generation || 1;
@@ -2466,10 +3287,17 @@
     document.getElementById('mSpouse').value = m.spouse || '';
     document.getElementById('mOccupation').value = m.occupation || '';
     document.getElementById('mNote').value = m.note || '';
-    currentPhotoData = m.photo || '';
-    updatePhotoPreview(currentPhotoData);
-    currentSpousePhotoData = m.spousePhoto || '';
-    updateSpousePhotoPreview(currentSpousePhotoData);
+
+    oldPhotoFileName = m.photo || m.Image || '';
+    currentPhotoFileName = oldPhotoFileName;
+    currentPhotoBase64 = '';
+    updatePhotoPreview(currentPhotoFileName);
+
+    oldSpousePhotoFileName = m.spousePhoto || '';
+    currentSpousePhotoFileName = oldSpousePhotoFileName;
+    currentSpousePhotoBase64 = '';
+    updateSpousePhotoPreview(currentSpousePhotoFileName);
+    updateSlugBadges();
 
     updateParentSelect(m.id);
     document.getElementById('mParentId').value = (m.parentId !== null && m.parentId !== undefined) ? m.parentId : '';
@@ -2480,7 +3308,11 @@
   }
 
   function addChildFromDetail() {
-    if (!isAdmin()) { alert("Chỉ Admin mới có quyền thêm con!"); return; }
+    if (!isAdmin()) {
+      alert("Vui lòng kích hoạt quyền Quản trị viên trước!");
+      openLoginModal();
+      return;
+    }
     const parentId = detailId;
     closeDetail();
 
@@ -2503,20 +3335,53 @@
   }
 
   function importData(input) {
-    if (!isAdmin()) { alert("Chỉ Admin mới có quyền nhập file!"); return; }
+    if (!isAdmin()) {
+      alert("Vui lòng kích hoạt quyền Quản trị viên trước!");
+      openLoginModal();
+      return;
+    }
     const file = input.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = async function (e) {
       try {
         const data = JSON.parse(e.target.result);
         if (data.members && Array.isArray(data.members)) {
+          const newPhotos = [];
+          data.members.forEach(m => {
+            if (m.photo && m.photo.startsWith('data:')) {
+              const fname = createPhotoSlug(m.name, m.id, false, '.jpg');
+              localPhotoCache.set(fname, m.photo);
+              newPhotos.push({ fileName: fname, contentBase64: m.photo });
+              m.photo = fname;
+            }
+            if (m.spousePhoto && m.spousePhoto.startsWith('data:')) {
+              const fname = createPhotoSlug(m.spouse, m.id, true, '.jpg');
+              localPhotoCache.set(fname, m.spousePhoto);
+              newPhotos.push({ fileName: fname, contentBase64: m.spousePhoto });
+              m.spousePhoto = fname;
+            }
+          });
           members = data.members;
-          nextId = data.nextId || (Math.max(...members.map(m => m.id), 0) + 1);
+          nextId = data.nextId || (Math.max(...members.map(m => m.id || 0), 0) + 1);
           renderTree();
-          saveData();
-          alert('Nhập dữ liệu thành công!');
+          setSyncStatus('syncing', 'Đang đồng bộ dữ liệu nhập lên GitHub...');
+          try {
+            const res = await executeAtomicSync({
+              members,
+              nextId,
+              newPhotos,
+              deletedPhotos: [],
+              commitMessage: `Nhập dữ liệu gia phả (${members.length} thành viên)`
+            }, (msg) => setSyncStatus('syncing', msg));
+            if (res.commitSha) currentCommitSha = res.commitSha;
+            setSyncStatus('ok', `Nhập dữ liệu và đồng bộ thành công (Commit ${res.commitSha || ''})`);
+            alert('Nhập dữ liệu và đồng bộ lên GitHub thành công!');
+          } catch (syncErr) {
+            setSyncStatus('error', 'Lỗi đồng bộ dữ liệu nhập: ' + syncErr.message);
+            alert('Đã cập nhật trên giao diện nhưng lỗi đồng bộ GitHub: ' + syncErr.message);
+          }
         } else {
           alert('File JSON không đúng cấu trúc gia phả!');
         }
