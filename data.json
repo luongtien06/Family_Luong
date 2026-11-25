@@ -545,7 +545,21 @@
       "parentId": 22,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 40,
+      "name": "Lường Hiếu Thiện",
+      "gender": "male",
+      "generation": 7,
+      "dob": "",
+      "dod": "Khuất",
+      "spouse": "",
+      "occupation": "",
+      "note": "",
+      "parentId": 4,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 40
+  "nextId": 41
 }
