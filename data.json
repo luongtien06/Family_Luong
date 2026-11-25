@@ -559,7 +559,21 @@
       "parentId": 4,
       "photo": "",
       "spousePhoto": ""
+    },
+    {
+      "id": 41,
+      "name": "Tiểu Hoa Công Chúa",
+      "gender": "female",
+      "generation": 7,
+      "dob": "",
+      "dod": "2010",
+      "spouse": "",
+      "occupation": "",
+      "note": "",
+      "parentId": 4,
+      "photo": "",
+      "spousePhoto": ""
     }
   ],
-  "nextId": 41
+  "nextId": 42
 }
